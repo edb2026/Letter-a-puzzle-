@@ -258,11 +258,30 @@
       '</defs><g clip-path="url(#c'+i+')"><path fill="url(#g'+i+')" fill-rule="evenodd" d="'+L.path+'"/></g></svg>';
     stage.appendChild(el);
     const path=el.querySelector('path');
-    const p={el,path,cx:(r.x+r.w/2),cy:(r.y+r.h/2),x:0,y:0,locked:false};
+    const p={el,path,r,ri:i,cx:(r.x+r.w/2),cy:(r.y+r.h/2),x:0,y:0,locked:false};
     path.addEventListener('pointerdown',e=>startDrag(e,p));
     return p;
   }
-  function rebuildPieces(){ pieces.forEach(p=>p.el.remove()); pieces=[]; for(let i=0;i<5;i++) pieces.push(buildPiece(i)); }
+  // A region is only a real puzzle piece if some of the letter actually falls inside it.
+  // (e.g. the F has nothing in the bottom-right region, so that piece must not exist.)
+  let _hitCtx=null;
+  function hitCtx(){ if(!_hitCtx){ const c=document.createElement('canvas'); c.width=VB_W; c.height=VB_H; _hitCtx=c.getContext('2d'); } return _hitCtx; }
+  function regionHasFill(p2d,r){
+    const ctx=hitCtx(), step=6;
+    for(let y=r.y+2; y<r.y+r.h; y+=step){
+      for(let x=r.x+2; x<r.x+r.w; x+=step){
+        if(ctx.isPointInPath(p2d,x,y,'evenodd')) return true;
+      }
+    }
+    return false;
+  }
+  function rebuildPieces(){
+    pieces.forEach(p=>p.el.remove()); pieces=[];
+    let p2d=null; try{ p2d=new Path2D(LETTERS[current].path); }catch(_){}
+    for(let i=0;i<REGIONS.length;i++){
+      if(!p2d || regionHasFill(p2d,REGIONS[i])) pieces.push(buildPiece(i));
+    }
+  }
 
   function layout(){
     const vw=innerWidth, vh=innerHeight;
@@ -273,7 +292,7 @@
     pieces.forEach(p=>{ const s=p.el.querySelector('svg'); s.setAttribute('width',Wpx); s.setAttribute('height',Hpx); });
   }
   function setPos(p,x,y){ p.x=x;p.y=y;p.el.style.transform='translate('+x+'px,'+y+'px)'; }
-  function clampPiece(p){ const vw=innerWidth,vh=innerHeight,r=REGIONS[pieces.indexOf(p)],pad=4;
+  function clampPiece(p){ const vw=innerWidth,vh=innerHeight,r=p.r,pad=4;
     const fx=p.x+r.x*scale,fy=p.y+r.y*scale,fw=r.w*scale,fh=r.h*scale; let nx=p.x,ny=p.y;
     if(fx<pad)nx+=(pad-fx); if(fx+fw>vw-pad)nx-=(fx+fw-(vw-pad)); if(fy<pad)ny+=(pad-fy); if(fy+fh>vh-pad)ny-=(fy+fh-(vh-pad)); setPos(p,nx,ny); }
   function scatter(){ const vw=innerWidth,vh=innerHeight;
