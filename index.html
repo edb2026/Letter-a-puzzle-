@@ -238,11 +238,39 @@
     g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.start(t); o.stop(t+dur+0.02); }
   function tick(){ tone(660,0,0.09,"triangle",0.12); }
   function winChime(){ [523.25,659.25,783.99,1046.5].forEach((f,i)=>tone(f,i*0.12,0.45,"triangle",0.22)); }
+  // pick the softest / most pleasant English voice available on the device
+  let _voice=null, _voiceTried=false;
+  function pickVoice(){
+    if(!("speechSynthesis"in window)) return null;
+    const list = window.speechSynthesis.getVoices() || [];
+    if(!list.length) return _voice; // not loaded yet
+    const prefer = ["samantha","ava","allison","susan","karen","moira","tessa","fiona",
+                    "serena","nicky","google us english","microsoft aria","microsoft jenny",
+                    "microsoft zira","female"];
+    const en = list.filter(v=>/en[-_]/i.test(v.lang) || /english/i.test(v.name));
+    for(const key of prefer){
+      const hit = en.find(v=>v.name.toLowerCase().includes(key));
+      if(hit) return hit;
+    }
+    return en[0] || list[0];
+  }
+  function ensureVoice(){ if(!_voice){ _voice=pickVoice(); } return _voice; }
+  if("speechSynthesis"in window){
+    window.speechSynthesis.onvoiceschanged = ()=>{ _voice = pickVoice() || _voice; };
+    try{ window.speechSynthesis.getVoices(); }catch(_){}
+  }
+
+  function say(ss, text, rate, pitch){
+    const u=new SpeechSynthesisUtterance(text);
+    u.lang="en-US"; u.rate=rate; u.pitch=pitch; u.volume=1;
+    const v=ensureVoice(); if(v) u.voice=v;
+    ss.speak(u);
+  }
   function speakWin(){ try{ if(!("speechSynthesis"in window))return; const ss=window.speechSynthesis; ss.cancel();
     const L=LETTERS[current];
-    const u1=new SpeechSynthesisUtterance(L.say);    u1.lang="en-US"; u1.rate=0.5;  u1.pitch=1.05; // letter, drawn out
-    const u2=new SpeechSynthesisUtterance(L.animal); u2.lang="en-US"; u2.rate=0.85; u2.pitch=1.05; // animal name
-    ss.speak(u1); ss.speak(u2);
+    say(ss, L.say,    0.38, 1.18);  // letter, soft & slow / drawn out
+    say(ss, " ",      0.5,  1.18);  // tiny gentle pause
+    say(ss, L.animal, 0.62, 1.16);  // animal name, soft & a bit slow
   }catch(e){} }
 
   function buildPiece(i){
