@@ -238,6 +238,55 @@
     text-shadow:0 5px 0 var(--orange-d), 0 0 30px rgba(255,210,63,.8); line-height:.95;
   }
   #startGate .sub{ color:#3a230d; font-weight:800; font-size:18px; margin:14px 0 30px; max-width:320px; }
+
+  /* ---- timer + record HUD (top center, during play) ---- */
+  #hudTop{
+    position:absolute; top:max(12px, env(safe-area-inset-top)); left:50%;
+    transform:translateX(-50%); z-index:38;
+    display:flex; flex-direction:column; gap:6px; align-items:center;
+    pointer-events:none;
+  }
+  .hudCard{
+    text-align:center; min-width:92px;
+    background:linear-gradient(180deg,#3a230d,#241404);
+    border:3px solid #ffd23f; border-radius:14px; padding:4px 14px 5px;
+    box-shadow:0 5px 0 rgba(0,0,0,.3), inset 0 0 0 2px rgba(255,255,255,.06);
+  }
+  .hudCard .t-lbl{
+    font-family:'Luckiest Guy', cursive; letter-spacing:1px;
+    color:#ffd23f; font-size:11px; text-shadow:0 2px 0 #000;
+  }
+  .hudCard .t-num{
+    font-family:'Luckiest Guy', cursive; color:#fff; font-size:26px; line-height:1;
+    text-shadow:0 2px 0 var(--orange-d);
+  }
+  #recordCard{ border-color:#cfe3ff; }
+  #recordCard .t-lbl{ color:#cfe3ff; }
+  @keyframes recpop{ 0%{transform:scale(1);} 50%{transform:scale(1.18);} 100%{transform:scale(1);} }
+  #recordCard.newrec{
+    animation:recpop .4s ease;
+    box-shadow:0 0 18px 5px rgba(255,210,63,.85), 0 5px 0 rgba(0,0,0,.3);
+  }
+
+  /* ---- record line on the start gate ---- */
+  #startRecord{
+    color:#3a230d; font-weight:800; font-size:16px; margin:0 0 26px;
+    background:rgba(255,255,255,.4); padding:9px 18px; border-radius:14px;
+    border:2px solid rgba(58,35,13,.25);
+  }
+  #startRecord b{ font-family:'Luckiest Guy', cursive; letter-spacing:1px; }
+
+  /* ---- win-screen time + record + new-record badge ---- */
+  #winTime{ display:none; color:#fff; font-weight:800; font-size:20px; margin:0 0 4px; }
+  #winNew{
+    display:none; color:#ffd23f; font-family:'Luckiest Guy', cursive;
+    font-size:28px; margin:2px 0 8px;
+    text-shadow:0 3px 0 var(--orange-d), 0 0 18px rgba(255,210,63,.85);
+    animation:bounceIn .5s ease;
+  }
+  #winNew.show{ display:block; }
+  #winRecord{ color:#cfe3ff; font-weight:800; font-size:16px; margin:0 0 22px; }
+  #winRecord b{ font-family:'Luckiest Guy', cursive; letter-spacing:1px; color:#fff; }
 </style>
 </head>
 <body>
@@ -251,6 +300,17 @@
   <div id="goalCard">
     <div class="lbl">GOAL</div>
     <div id="goalNum">10</div>
+  </div>
+
+  <div id="hudTop">
+    <div class="hudCard" id="timerCard">
+      <div class="t-lbl">TIME</div>
+      <div class="t-num" id="timerNum">00:00</div>
+    </div>
+    <div class="hudCard" id="recordCard">
+      <div class="t-lbl">YOUR RECORD</div>
+      <div class="t-num" id="recordNum">--:--</div>
+    </div>
   </div>
 
   <!-- balls injected here -->
@@ -272,6 +332,9 @@
   <div id="win">
     <h1 id="winTitle">YOU WON!</h1>
     <p id="winSub">Want more?</p>
+    <div id="winTime"></div>
+    <div id="winNew">NEW RECORD!</div>
+    <div id="winRecord"></div>
     <button class="btn" id="nextBtn">NEXT</button>
     <div id="finalNote">You finished every level — math champion! Tap NEXT to play again.</div>
   </div>
@@ -279,6 +342,7 @@
   <div id="startGate">
     <h1>MATH<br>HOOPS</h1>
     <div class="sub">Drag the numbers into the hoop with your finger. Add them up to hit the GOAL!</div>
+    <div id="startRecord">YOUR RECORD <b id="startRecordNum">--:--</b></div>
     <button class="btn" id="startBtn">PLAY</button>
   </div>
 </div>
@@ -312,11 +376,25 @@
   const fx     = document.getElementById('fx');
   const ctx    = fx.getContext('2d');
 
+  // timer + best-record HUD
+  const timerNumEl  = document.getElementById('timerNum');
+  const recordNumEl = document.getElementById('recordNum');
+  const recordCard  = document.getElementById('recordCard');
+  const startRecEl  = document.getElementById('startRecordNum');
+  const winTimeEl   = document.getElementById('winTime');
+  const winNewEl    = document.getElementById('winNew');
+  const winRecEl    = document.getElementById('winRecord');
+
   let levelIndex = 0;
   let goal = 10;
   let total = 0;
   let balls = [];           // active ball elements
   let busy = false;         // lock during win animation
+
+  // run timer (level 1 first touch -> 100 on the last level) + saved record
+  let timerRunning=false, timerFinished=false, runStartTs=0, runMs=0;
+  const REC_KEY='mathHoopsBestMs_v1';
+  let memBest=null;         // in-memory fallback if localStorage is blocked
 
   /* ---------- AUDIO ---------- */
   let ac = null;
@@ -408,6 +486,69 @@
     }catch(e){}
   }
 
+  /* ---------- TIMER + BEST RECORD ---------- */
+  function fmtTime(ms){
+    if(ms==null || ms<0) return '--:--';
+    const tot = Math.floor(ms/1000);
+    const m = Math.floor(tot/60), s = tot%60;
+    return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+  // record is stored per-device in this browser's localStorage; no server, no
+  // accounts, so different children on different devices never share a record.
+  function getBest(){
+    try{
+      const v = localStorage.getItem(REC_KEY);
+      if(v!=null){ const n=parseInt(v,10); if(!isNaN(n)) return n; }
+    }catch(e){}
+    return memBest;
+  }
+  function setBest(ms){
+    memBest = ms;
+    try{ localStorage.setItem(REC_KEY, String(ms)); }catch(e){}
+  }
+  function updateRecordUI(){
+    const best = getBest();
+    const txt = (best==null) ? '--:--' : fmtTime(best);
+    if(recordNumEl) recordNumEl.textContent = txt;
+    if(startRecEl)  startRecEl.textContent  = txt;
+    if(winRecEl)    winRecEl.innerHTML       = 'YOUR RECORD <b>'+txt+'</b>';
+  }
+  function startRunTimer(){           // first ball touch on level 1
+    if(timerRunning || timerFinished) return;
+    timerRunning = true;
+    runStartTs = Date.now();
+  }
+  function resetRunTimer(){           // fresh run begins (back at level 1)
+    timerRunning = false; timerFinished = false; runMs = 0; runStartTs = 0;
+    if(timerNumEl) timerNumEl.textContent = fmtTime(0);
+  }
+  function finishRun(){               // 100 reached on the last level
+    if(!timerRunning) return null;
+    timerRunning = false; timerFinished = true;
+    runMs = Date.now() - runStartTs;
+    if(timerNumEl) timerNumEl.textContent = fmtTime(runMs);
+    return runMs;
+  }
+  // live digital tick so the child sees the time running
+  setInterval(()=>{
+    if(timerRunning && timerNumEl){
+      timerNumEl.textContent = fmtTime(Date.now()-runStartTs);
+    }
+  }, 200);
+  // happy chime when a new record is set
+  function recordChime(){
+    const c=audio(); if(!c) return;
+    const t=c.currentTime;
+    [660,880,1320].forEach((f,i)=>{
+      const dt=i*0.12, o=c.createOscillator(), g=c.createGain();
+      o.type='triangle'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t+dt);
+      g.gain.exponentialRampToValueAtTime(0.22,t+dt+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dt+0.3);
+      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.34);
+    });
+  }
+
   /* ---------- LAYOUT HELPERS ---------- */
   function fieldRect(){ return game.getBoundingClientRect(); }
   function hoopDropZone(){
@@ -429,6 +570,9 @@
     busy = false;
     total = 0;
     setTotal(0, false);
+    if(levelIndex===0) resetRunTimer();   // a fresh run always begins at level 1
+    if(recordCard) recordCard.classList.remove('newrec');
+    updateRecordUI();
     const cfg = LEVELS[levelIndex];
     goal = cfg.goal;
     goalEl.textContent = goal;
@@ -496,6 +640,7 @@
     el.addEventListener('pointerdown', e=>{
       if(busy) return;
       audio();
+      startRunTimer();   // first touch on level 1 starts the clock; later levels: no-op
       // kill any leftover bounce animation so the ball drags from where it
       // actually is and its drop position is measured correctly
       el.style.transition = ''; el.style.transform = '';
@@ -592,14 +737,38 @@
   function win(){
     busy = true;
     const last = levelIndex === LEVELS.length-1;
+
+    let finalMs=null, isNewRecord=false;
+    if(last){
+      finalMs = finishRun();                 // stop the run clock at 100
+      if(finalMs!=null){
+        const best = getBest();
+        if(best==null || finalMs < best){ setBest(finalMs); isNewRecord = true; }
+      }
+    }
+    updateRecordUI();
+
+    // final win shows this run's time (and NEW RECORD if beaten); others hide it
+    if(last && finalMs!=null){
+      winTimeEl.textContent = 'Your time: ' + fmtTime(finalMs);
+      winTimeEl.style.display = 'block';
+    }else{
+      winTimeEl.textContent = '';
+      winTimeEl.style.display = 'none';
+    }
+    winNewEl.classList.toggle('show', isNewRecord);
+    if(isNewRecord && recordCard) recordCard.classList.add('newrec');
+
     document.getElementById('winTitle').textContent = last ? 'CHAMPION!' : 'YOU WON!';
     document.getElementById('winSub').textContent   = last ? 'You are a real champion!' : 'Want more?';
     document.getElementById('finalNote').style.display = last ? 'block':'none';
     winEl.classList.add('show');
     if(last){
+      if(isNewRecord) recordChime();
       startConfetti();   // lots of falling confetti across the screen
       startFireworks();
-      sayWin(goal, "You're great! You won! You are a real champion!");
+      sayWin(goal, isNewRecord ? "New record! You are a real champion!"
+                               : "You won! You are a real champion!");
     }else{
       startFireworks();
       sayWin(goal, "You won! Want more?");
@@ -706,7 +875,9 @@
     spawnLevel();
   });
 
-  // safety: keep canvas sized
+  // safety: keep canvas sized + show 00:00 and the saved record on load
+  resetRunTimer();
+  updateRecordUI();
   resizeCanvas();
 })();
 </script>
