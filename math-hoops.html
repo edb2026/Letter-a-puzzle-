@@ -435,6 +435,15 @@
     g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);
     o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.3);
   }
+  // soft low "thud" when a ball is dropped away from the hoop (a plain miss)
+  function missThud(){
+    const c=audio(); if(!c) return;
+    const t=c.currentTime;
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(190,t); o.frequency.exponentialRampToValueAtTime(90,t+0.12);
+    g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.2);
+  }
   function fireworkPop(){
     const c=audio(); if(!c) return;
     const t=c.currentTime;
@@ -672,28 +681,51 @@
   }
 
   function overlapsHoop(el){
-    // Count it as "through the hoop" if ANY part of the ball overlaps the
-    // catch zone, not just its exact center. This makes every ball that
-    // visibly touches the rim register with the score + sound system.
-    const b = el.getBoundingClientRect();
-    const z = hoopDropZone();
-    return b.left          < z.x + z.w &&
-           b.left + b.width  > z.x &&
-           b.top           < z.y + z.h &&
-           b.top  + b.height > z.y;
+    // Forgiving catch: measure the ball's center against the rim's center.
+    // Anything dropped over (or just around) the rim opening counts as a shot,
+    // so a ball going straight through the middle ALWAYS registers.
+    const rim = document.getElementById('rim').getBoundingClientRect();
+    const cx = rim.left + rim.width/2, cy = rim.top + rim.height/2;
+    const b  = el.getBoundingClientRect();
+    const bx = b.left + b.width/2,   by = b.top + b.height/2;
+    const dx = Math.abs(bx - cx);
+    const dy = by - cy;                          // + = below the rim center
+    const hTol  = rim.width*0.5 + b.width*0.85 + 30;  // left/right reach
+    const upTol = b.height*0.95 + 85;                 // above the rim
+    const dnTol = b.height*0.95 + 95;                 // down into the net
+    return dx <= hTol && dy >= -upTol && dy <= dnTol;
   }
 
   function attemptDrop(el){
     if(busy) return;
-    if(!overlapsHoop(el)){ return; } // dropped on the court, just stays where it is
     const val = parseInt(el.dataset.val,10);
 
+    if(!overlapsHoop(el)){
+      // dropped away from the hoop -> soft thud and collect it on the LEFT
+      missThud();
+      sendToLeft(el);
+      return;
+    }
     if(total + val > goal){
-      bounceOff(el);              // too big -> bounce off the net with a clang
+      bounceOff(el);              // too big -> bounce off the net with a clang, collect LEFT
       return;
     }
     // good shot
     scoreBall(el, val);
+  }
+
+  // park a non-scoring ball on the LEFT side, away from the hoop
+  function sendToLeft(el){
+    const fr = fieldRect();
+    const sz = el.offsetWidth;
+    const bandW = Math.max(sz + 8, fr.width * 0.24);     // a column on the far left
+    const nx = 6 + Math.random() * Math.max(8, bandW - sz);
+    const ny = 120 + Math.random() * Math.max(40, fr.height * 0.58 - 120);
+    el.style.transition = 'left .5s cubic-bezier(.3,1.3,.6,1), top .5s cubic-bezier(.3,1.3,.6,1), transform .5s';
+    el.style.transform  = 'rotate(' + ((Math.random()*24-12)|0) + 'deg)';
+    el.style.left = nx + 'px';
+    el.style.top  = ny + 'px';
+    setTimeout(()=>{ el.style.transition=''; el.style.transform=''; }, 560);
   }
 
   function scoreBall(el, val){
@@ -721,16 +753,8 @@
   function bounceOff(el){
     clang();
     net.classList.remove('swish'); void net.offsetWidth; net.classList.add('swish');
-    const fr = fieldRect();
-    const sz = el.offsetWidth;
-    // throw it back up to a random spot in the upper play area
-    const nx = 12 + Math.random()*Math.max(40,(fr.width - sz - 24));
-    const ny = 100 + Math.random()*Math.max(40,(fr.height*0.42));
-    el.style.transition = 'left .55s cubic-bezier(.3,1.4,.6,1), top .55s cubic-bezier(.3,1.4,.6,1), transform .55s';
-    el.style.transform = 'rotate('+((Math.random()*60-30)|0)+'deg)';
-    el.style.left = nx+'px';
-    el.style.top  = ny+'px';
-    setTimeout(()=>{ el.style.transition=''; el.style.transform=''; }, 600);
+    // too-big ball is rejected by the rim -> collect it on the LEFT side
+    sendToLeft(el);
   }
 
   /* ---------- WIN + FIREWORKS ---------- */
