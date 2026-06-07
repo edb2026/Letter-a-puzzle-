@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<title>Play & Learn — Game Menu</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<!--
+  ┌──────────────────────────────────────────────────────────────────┐
+  │  HOW TO HOOK UP YOUR GAMES                                         │
+  │  This file is the home page (index.html). It links to two games.  │
+  │  Change the two href values below if your filenames differ:       │
+  │    • Letters puzzle  -> data-href="letters.html"                  │
+  │    • Math basketball -> data-href="math-hoops.html"               │
+  │  (For the folder structure use "letters/" and "math/" instead.)   │
+  └──────────────────────────────────────────────────────────────────┘
+-->
+<style>
+  :root{
+    --bg-1:#5b3df5;
+    --bg-2:#8a2be2;
+    --letters-1:#36d1dc;
+    --letters-2:#1a7fb0;
+    --math-1:#ff8a3d;
+    --math-2:#e0500f;
+    --cream:#fff7e8;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0; padding:0; min-height:100%;
+    font-family:'Baloo 2', system-ui, sans-serif;
+    color:var(--cream);
+    background:
+      radial-gradient(120% 90% at 15% 0%, #ffd23f 0%, transparent 42%),
+      radial-gradient(120% 90% at 100% 100%, #ff5bb0 0%, transparent 45%),
+      linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    overflow-x:hidden;
+    -webkit-user-select:none; user-select:none;
+    touch-action:manipulation;
+  }
+  /* floating doodles in the background */
+  .doodle{ position:fixed; font-family:'Luckiest Guy', cursive; opacity:.12; pointer-events:none;
+           color:#fff; z-index:0; animation:drift 9s ease-in-out infinite; }
+  @keyframes drift{ 0%,100%{ transform:translateY(0) rotate(-6deg);} 50%{ transform:translateY(-22px) rotate(6deg);} }
+
+  .wrap{
+    position:relative; z-index:2;
+    min-height:100svh; min-height:100vh;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:28px 18px calc(28px + env(safe-area-inset-bottom));
+    gap:8px;
+  }
+  header{ text-align:center; margin-bottom:8px; }
+  .kicker{
+    display:inline-block; font-weight:800; letter-spacing:3px; font-size:13px;
+    background:rgba(255,255,255,.16); padding:6px 16px; border-radius:30px;
+    border:2px solid rgba(255,255,255,.3);
+  }
+  h1{
+    font-family:'Luckiest Guy', cursive; font-size:clamp(42px, 11vw, 78px);
+    margin:14px 0 4px; line-height:.95;
+    text-shadow:0 5px 0 rgba(0,0,0,.25), 0 0 30px rgba(255,210,63,.5);
+  }
+  .sub{ font-weight:700; font-size:clamp(15px,4vw,19px); opacity:.92; max-width:520px; text-align:center; }
+
+  .cards{
+    width:100%; max-width:760px; margin-top:20px;
+    display:grid; grid-template-columns:1fr; gap:18px;
+  }
+  @media (min-width:680px){ .cards{ grid-template-columns:1fr 1fr; gap:24px; } }
+
+  .card{
+    position:relative; cursor:pointer; text-decoration:none; color:#1c1208;
+    border-radius:28px; padding:26px 22px 24px;
+    border:5px solid rgba(255,255,255,.85);
+    box-shadow:0 14px 0 rgba(0,0,0,.22), 0 24px 40px rgba(0,0,0,.32);
+    transition:transform .12s ease, box-shadow .12s ease;
+    overflow:hidden; min-height:230px;
+    display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
+  }
+  .card:active{ transform:translateY(7px); box-shadow:0 7px 0 rgba(0,0,0,.22), 0 14px 24px rgba(0,0,0,.3); }
+  @media (hover:hover){ .card:hover{ transform:translateY(-6px) rotate(-.5deg); } }
+
+  .card.letters{ background:linear-gradient(165deg, var(--letters-1), var(--letters-2)); }
+  .card.math{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); }
+  .card::after{ /* shine */
+    content:""; position:absolute; top:-40%; left:-30%; width:60%; height:180%;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+    transform:rotate(20deg);
+  }
+
+  .icon{ width:118px; height:118px; margin:4px auto 14px; filter:drop-shadow(0 8px 10px rgba(0,0,0,.3)); }
+  .card h2{
+    font-family:'Luckiest Guy', cursive; color:#fff; font-size:30px; margin:0 0 6px;
+    text-shadow:0 3px 0 rgba(0,0,0,.28); letter-spacing:.5px;
+  }
+  .card p{ color:#fff; font-weight:700; font-size:15px; margin:0 0 16px; opacity:.95; }
+  .play{
+    margin-top:auto; font-family:'Luckiest Guy', cursive; letter-spacing:1px;
+    color:#1c1208; background:#fff7e8; padding:11px 30px; border-radius:18px; font-size:20px;
+    box-shadow:0 6px 0 rgba(0,0,0,.25);
+  }
+
+  footer{ margin-top:26px; font-weight:700; font-size:12px; opacity:.7; text-align:center; }
+</style>
+</head>
+<body>
+  <div class="doodle" style="top:8%; left:6%; font-size:60px; animation-delay:-1s;">A</div>
+  <div class="doodle" style="top:18%; right:8%; font-size:72px; animation-delay:-3s;">7</div>
+  <div class="doodle" style="bottom:14%; left:10%; font-size:66px; animation-delay:-5s;">B</div>
+  <div class="doodle" style="bottom:8%; right:12%; font-size:80px; animation-delay:-2s;">3</div>
+
+  <div class="wrap">
+    <header>
+      <span class="kicker">PLAY &amp; LEARN</span>
+      <h1>GAME MENU</h1>
+      <div class="sub">Pick a game to play. Tap a card to start!</div>
+    </header>
+
+    <div class="cards">
+      <!-- LETTERS PUZZLE — change data-href if your file has another name -->
+      <a class="card letters" data-href="letters.html">
+        <svg class="icon" viewBox="0 0 120 120" aria-hidden="true">
+          <rect x="10" y="42" width="46" height="46" rx="9" fill="#ffd23f" stroke="#1c1208" stroke-width="4"/>
+          <text x="33" y="76" font-family="Luckiest Guy, cursive" font-size="34" fill="#1c1208" text-anchor="middle">A</text>
+          <rect x="58" y="22" width="46" height="46" rx="9" fill="#ff5bb0" stroke="#1c1208" stroke-width="4" transform="rotate(8 81 45)"/>
+          <text x="81" y="56" font-family="Luckiest Guy, cursive" font-size="34" fill="#fff" text-anchor="middle" transform="rotate(8 81 45)">B</text>
+          <rect x="48" y="62" width="46" height="46" rx="9" fill="#5be37e" stroke="#1c1208" stroke-width="4" transform="rotate(-7 71 85)"/>
+          <text x="71" y="96" font-family="Luckiest Guy, cursive" font-size="34" fill="#1c1208" text-anchor="middle" transform="rotate(-7 71 85)">C</text>
+        </svg>
+        <h2>ABC LETTERS</h2>
+        <p>Build words &amp; spell with letters</p>
+        <span class="play">PLAY</span>
+      </a>
+
+      <!-- MATH BASKETBALL — change data-href if your file has another name -->
+      <a class="card math" data-href="math-hoops.html">
+        <svg class="icon" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="60" r="40" fill="#ee6c2b" stroke="#7a3208" stroke-width="4"/>
+          <path d="M60 20 V100 M20 60 H100 M30 30 Q60 60 30 90 M90 30 Q60 60 90 90"
+                fill="none" stroke="#7a3208" stroke-width="4"/>
+          <rect x="78" y="6" width="34" height="22" rx="3" fill="#fff7e8" stroke="#1c1208" stroke-width="3"/>
+          <text x="95" y="23" font-family="Luckiest Guy, cursive" font-size="14" fill="#1c1208" text-anchor="middle">+</text>
+        </svg>
+        <h2>MATH HOOPS</h2>
+        <p>Add numbers &amp; shoot the hoop</p>
+        <span class="play">PLAY</span>
+      </a>
+    </div>
+
+    <footer>Made for curious kids · choose a game above</footer>
+  </div>
+
+<script>
+  // Navigate on tap (works great for big touch targets on phone & iPad)
+  document.querySelectorAll('.card').forEach(function(card){
+    card.addEventListener('click', function(){
+      var href = card.getAttribute('data-href');
+      if(href) window.location.href = href;
+    });
+  });
+</script>
+</body>
+</html>
