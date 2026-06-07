@@ -681,19 +681,32 @@
   }
 
   function overlapsHoop(el){
-    // Forgiving catch: measure the ball's center against the rim's center.
-    // Anything dropped over (or just around) the rim opening counts as a shot,
-    // so a ball going straight through the middle ALWAYS registers.
-    const rim = document.getElementById('rim').getBoundingClientRect();
-    const cx = rim.left + rim.width/2, cy = rim.top + rim.height/2;
-    const b  = el.getBoundingClientRect();
-    const bx = b.left + b.width/2,   by = b.top + b.height/2;
-    const dx = Math.abs(bx - cx);
-    const dy = by - cy;                          // + = below the rim center
-    const hTol  = rim.width*0.5 + b.width*0.85 + 30;  // left/right reach
-    const upTol = b.height*0.95 + 85;                 // above the rim
-    const dnTol = b.height*0.95 + 95;                 // down into the net
-    return dx <= hTol && dy >= -upTol && dy <= dnTol;
+    // VERY forgiving catch (this is a kids' game — precise aim is NOT required).
+    // We build a generous catch box that covers the whole opening: the rim AND
+    // the net below it, a good bit wider on each side, reaching above for the
+    // entry and all the way down through the net. A ball counts if EITHER its
+    // center is inside the box OR the ball even partly overlaps the box. So any
+    // ball dropped through the ring -- or just a little wider than the ring, or
+    // dragged down through the net -- ALWAYS enters the system (scored if it
+    // fits the goal, bounced if it's too big). It never silently disappears.
+    const rim  = document.getElementById('rim').getBoundingClientRect();
+    const netR = document.getElementById('net').getBoundingClientRect();
+    const b    = el.getBoundingClientRect();
+
+    const padX   = b.width  * 0.9 + 44;                                     // "a little wider than the ring"
+    const top    = rim.top  - (b.height * 1.0 + 100);                       // well above the rim (coming in)
+    const bottom = Math.max(rim.bottom, netR.bottom) + b.height * 1.0 + 55; // down through the whole net
+    const left   = Math.min(rim.left,  netR.left)  - padX;
+    const right  = Math.max(rim.right, netR.right) + padX;
+
+    // center inside the box
+    const bx = b.left + b.width/2, by = b.top + b.height/2;
+    const centerIn = bx >= left && bx <= right && by >= top && by <= bottom;
+
+    // OR the ball rectangle touches the box at all (extra forgiving on the edges)
+    const touches = b.right >= left && b.left <= right && b.bottom >= top && b.top <= bottom;
+
+    return centerIn || touches;
   }
 
   function attemptDrop(el){
