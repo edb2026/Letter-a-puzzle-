@@ -413,7 +413,7 @@
   function hoopDropZone(){
     // generous drop area around the rim opening
     const r = document.getElementById('rim').getBoundingClientRect();
-    return { x:r.left-30, y:r.top-50, w:r.width+60, h:r.height+90 };
+    return { x:r.left-45, y:r.top-75, w:r.width+90, h:r.height+130 };
   }
 
   function resizeCanvas(){
@@ -496,6 +496,9 @@
     el.addEventListener('pointerdown', e=>{
       if(busy) return;
       audio();
+      // kill any leftover bounce animation so the ball drags from where it
+      // actually is and its drop position is measured correctly
+      el.style.transition = ''; el.style.transform = '';
       dragging = true; pid = e.pointerId;
       el.setPointerCapture(pid);
       el.classList.add('dragging');
@@ -524,10 +527,15 @@
   }
 
   function overlapsHoop(el){
+    // Count it as "through the hoop" if ANY part of the ball overlaps the
+    // catch zone, not just its exact center. This makes every ball that
+    // visibly touches the rim register with the score + sound system.
     const b = el.getBoundingClientRect();
-    const cx = b.left + b.width/2, cy = b.top + b.height/2;
     const z = hoopDropZone();
-    return cx>=z.x && cx<=z.x+z.w && cy>=z.y && cy<=z.y+z.h;
+    return b.left          < z.x + z.w &&
+           b.left + b.width  > z.x &&
+           b.top           < z.y + z.h &&
+           b.top  + b.height > z.y;
   }
 
   function attemptDrop(el){
