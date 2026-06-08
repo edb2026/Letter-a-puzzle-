@@ -100,6 +100,15 @@
     border:2px solid rgba(255,255,255,.3);
   }
   #resetBtn:active{ transform:scale(.94); }
+  #undoBtn{
+    position:absolute; top:calc(max(16px, env(safe-area-inset-top)) + 116px); left:14px;
+    z-index:40; cursor:pointer;
+    font-family:'Baloo 2'; font-weight:700; color:#fff; font-size:13px;
+    background:rgba(255,210,63,.22); padding:5px 11px; border-radius:14px;
+    border:2px solid rgba(255,210,63,.55);
+    opacity:.4; pointer-events:none;
+  }
+  #undoBtn:active{ transform:scale(.94); }
 
   /* Floating numbers */
   .ball{
@@ -296,6 +305,7 @@
   <div id="levelTag">Level 1 / 10</div>
   <a id="menuBtn" href="index.html">🏠 Menu</a>
   <div id="resetBtn">↺ Reset</div>
+  <div id="undoBtn">↩ Take back</div>
 
   <div id="goalCard">
     <div class="lbl">GOAL</div>
@@ -392,6 +402,7 @@
   let total = 0;
   let balls = [];           // active ball elements
   let busy = false;         // lock during win animation
+  let scored = [];          // values dunked so far (for the Take-back/undo button)
 
   // run timer (level 1 first touch -> 100 on the last level) + saved record
   let timerRunning=false, timerFinished=false, runStartTs=0, runMs=0;
@@ -669,9 +680,35 @@
     return balls.filter(b=>b!==except).map(b=>parseInt(b.dataset.val,10));
   }
 
+  // create one ball with a given value at a random spot in the play area
+  function makeBall(val){
+    const fr = fieldRect();
+    const ballSize = fr.width < 420 ? 56 : 64;
+    const top = 90, bottom = fr.height * 0.55, left = 8, right = fr.width - ballSize - 8;
+    const el = document.createElement('div');
+    el.className='ball';
+    el.style.width = el.style.height = ballSize+'px';
+    const inner = document.createElement('div');
+    inner.className='bob';
+    inner.textContent = val;
+    inner.style.fontSize = (ballSize*0.40)+'px';   // a touch smaller for 2-digit numbers
+    el.appendChild(inner);
+    el.dataset.val = val;
+    el.style.left = (left + Math.random()*Math.max(40,(right-left)))+'px';
+    el.style.top  = (top  + Math.random()*Math.max(40,(bottom-top)))+'px';
+    inner.style.animationDelay = (-Math.random()*3)+'s';
+    inner.style.animationDuration = (2.4+Math.random()*1.6)+'s';
+    attachDrag(el);
+    game.appendChild(el);
+    balls.push(el);
+    return el;
+  }
+
   function spawnLevel(){
     whoosh();                              // pleasant rustle on every level transition
     clearBalls();
+    scored = [];                           // reset undo history
+    updateUndoBtn();
     busy = false;
     total = 0;
     setTotal(0, false);
@@ -683,36 +720,7 @@
     goalEl.textContent = goal;
     levelTag.textContent = 'Level '+(levelIndex+1)+' / '+LEVELS.length;
 
-    const fr = fieldRect();
-    const ballSize = fr.width < 420 ? 56 : 64;
-    // spawn region: avoid top bars and the bottom hoop area
-    const top = 90;
-    const bottom = fr.height * 0.55;   // keep above the hoop zone
-    const left = 8;
-    const right = fr.width - ballSize - 8;
-
-    const values = buildBalls(goal);
-
-    values.forEach(val=>{
-      const el = document.createElement('div');
-      el.className='ball';
-      el.style.width = el.style.height = ballSize+'px';
-      const inner = document.createElement('div');
-      inner.className='bob';
-      inner.textContent = val;
-      inner.style.fontSize = (ballSize*0.40)+'px';   // a touch smaller for 2-digit numbers
-      el.appendChild(inner);
-      el.dataset.val = val;
-      const x = left + Math.random()*Math.max(40,(right-left));
-      const y = top  + Math.random()*Math.max(40,(bottom-top));
-      el.style.left = x+'px';
-      el.style.top  = y+'px';
-      el.querySelector('.bob').style.animationDelay = (-Math.random()*3)+'s';
-      el.querySelector('.bob').style.animationDuration = (2.4+Math.random()*1.6)+'s';
-      attachDrag(el);
-      game.appendChild(el);
-      balls.push(el);
-    });
+    buildBalls(goal).forEach(makeBall);
   }
 
   function clampBalls(){
@@ -812,18 +820,10 @@
     }
     const newTotal = total + val;
     if(newTotal > goal){
-      bounceOff(el);              // too big -> bounce off the net with a clang, collect LEFT
+      bounceOff(el);              // too big (would pass the goal) -> bounce off, collect LEFT
       return;
     }
-    if(newTotal < goal){
-      // Would taking this ball strand the player? Only allow the shot if the
-      // REMAINING balls can still add up exactly to what's left. Otherwise it
-      // bounces off -- so the level always stays winnable (no dead ends, ever).
-      if(!canMake(fieldValues(el), goal - newTotal)){
-        bounceOff(el);
-        return;
-      }
-    }
+    // fits the goal -> always score it (simple, predictable math for kids)
     // good (and safe) shot
     scoreBall(el, val);
   }
@@ -858,10 +858,30 @@
     setTimeout(()=>{ el.remove(); }, 560);
 
     setTotal(total + val, true, true);
+    scored.push(val);          // remember for Take-back
+    updateUndoBtn();
 
     if(total === goal){
       win();
     }
+  }
+
+  // Take back the last ball put in the basket: subtract it and drop a fresh
+  // ball of that value back onto the field. So a child can never get stuck --
+  // every ball that fits always goes in, and a wrong choice is easy to undo.
+  function undoLast(){
+    if(busy || scored.length===0) return;
+    const val = scored.pop();
+    setTotal(Math.max(0, total - val), true, false);
+    makeBall(val);
+    whoosh();
+    updateUndoBtn();
+  }
+  function updateUndoBtn(){
+    const btn = document.getElementById('undoBtn');
+    if(!btn) return;
+    btn.style.opacity = scored.length ? '1' : '.4';
+    btn.style.pointerEvents = scored.length ? 'auto' : 'none';
   }
 
   function bounceOff(el){
@@ -1003,6 +1023,8 @@
     if(busy) return;
     spawnLevel();
   });
+
+  document.getElementById('undoBtn').addEventListener('click', undoLast);
 
   document.getElementById('startBtn').addEventListener('click', ()=>{
     audio();
