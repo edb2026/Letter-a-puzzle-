@@ -12,11 +12,11 @@
 <!--
   ┌──────────────────────────────────────────────────────────────────┐
   │  HOW TO HOOK UP YOUR GAMES                                         │
-  │  This file is the home page (index.html). It links to two games.  │
-  │  Change the two href values below if your filenames differ:       │
-  │    • Letters puzzle  -> data-href="letters.html"                  │
-  │    • Math basketball -> data-href="math-hoops.html"               │
-  │  (For the folder structure use "letters/" and "math/" instead.)   │
+  │  This file is the home page (index.html). It links to the games.  │
+  │  Change the href values below if your filenames differ:           │
+  │    • Letters puzzle   -> data-href="letters.html"                 │
+  │    • Math basketball  -> data-href="math-hoops.html"  (classic)   │
+  │    • Super Hero hoops -> data-href="super-hero.html"  (hero)      │
   └──────────────────────────────────────────────────────────────────┘
 -->
 <style>
@@ -27,6 +27,9 @@
     --letters-2:#1a7fb0;
     --math-1:#ff8a3d;
     --math-2:#e0500f;
+    --hero-1:#3a6fe0;
+    --hero-2:#26336a;
+    --hero-gold:#ffd23f;
     --cream:#fff7e8;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -70,6 +73,7 @@
   .cards{
     width:100%; max-width:760px; margin-top:20px;
     display:grid; grid-template-columns:1fr; gap:18px;
+    align-items:start;
   }
   @media (min-width:680px){ .cards{ grid-template-columns:1fr 1fr; gap:24px; } }
 
@@ -105,6 +109,48 @@
     box-shadow:0 6px 0 rgba(0,0,0,.25);
   }
 
+  /* ---- combined MATH HOOPS card: shared title + two entrances ---- */
+  .card.combo{
+    background:linear-gradient(165deg, #3b2f6b, #241a4d);
+    justify-content:flex-start; gap:14px; cursor:default;
+  }
+  .combo-head{ display:flex; flex-direction:column; align-items:center; }
+  .combo .icon{ width:78px; height:78px; margin:2px auto 4px; }
+  .combo-head h2{ margin:0; }
+  .combo-head .tag{ font-weight:800; font-size:12px; letter-spacing:1px; color:#e9e2ff; opacity:.85; }
+
+  .entrance{
+    width:100%; border-radius:20px; padding:14px 15px 15px;
+    display:flex; flex-direction:column; gap:11px; cursor:pointer;
+    border:3px solid rgba(255,255,255,.7);
+    box-shadow:0 7px 0 rgba(0,0,0,.25);
+    transition:transform .1s ease, box-shadow .1s ease;
+  }
+  .entrance:active{ transform:translateY(5px); box-shadow:0 2px 0 rgba(0,0,0,.25); }
+  @media (hover:hover){ .entrance:hover{ transform:translateY(-3px); } }
+  .entrance.classic{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); }
+  .entrance.hero{
+    background:
+      radial-gradient(120% 80% at 50% -10%, #8fd6ff 0%, transparent 55%),
+      linear-gradient(165deg, var(--hero-1), var(--hero-2));
+    border-color:var(--hero-gold);
+  }
+  .ent-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .ent-name{
+    font-family:'Luckiest Guy', cursive; color:#fff; font-size:24px; letter-spacing:.5px;
+    text-shadow:0 2px 0 rgba(0,0,0,.3);
+  }
+  .entrance.hero .ent-name{ text-shadow:0 2px 0 #9c1818, 0 0 14px rgba(255,210,63,.5); }
+  .badge{
+    display:flex; flex-direction:column; align-items:flex-end; line-height:1.05;
+    background:rgba(0,0,0,.28); padding:6px 11px; border-radius:13px;
+    border:2px solid rgba(255,255,255,.4); min-width:78px;
+  }
+  .badge i{ font-style:normal; font-weight:800; font-size:9px; letter-spacing:1px; color:#ffe9b0; }
+  .entrance.hero .badge i{ color:#cfe3ff; }
+  .badge b{ font-family:'Luckiest Guy', cursive; font-size:19px; color:#fff; }
+  .play.small{ align-self:center; margin:0; padding:9px 30px; font-size:18px; }
+
   footer{ margin-top:26px; font-weight:700; font-size:12px; opacity:.7; text-align:center; }
 </style>
 </head>
@@ -137,30 +183,62 @@
         <span class="play">PLAY</span>
       </a>
 
-      <!-- MATH BASKETBALL — change data-href if your file has another name -->
-      <a class="card math" data-href="math-hoops.html">
-        <svg class="icon" viewBox="0 0 120 120" aria-hidden="true">
-          <circle cx="60" cy="60" r="40" fill="#ee6c2b" stroke="#7a3208" stroke-width="4"/>
-          <path d="M60 20 V100 M20 60 H100 M30 30 Q60 60 30 90 M90 30 Q60 60 90 90"
-                fill="none" stroke="#7a3208" stroke-width="4"/>
-          <rect x="78" y="6" width="34" height="22" rx="3" fill="#fff7e8" stroke="#1c1208" stroke-width="3"/>
-          <text x="95" y="23" font-family="Luckiest Guy, cursive" font-size="14" fill="#1c1208" text-anchor="middle">+</text>
-        </svg>
-        <h2>MATH HOOPS</h2>
-        <p>Add numbers &amp; shoot the hoop</p>
-        <span class="play">PLAY</span>
-      </a>
+      <!-- MATH HOOPS — one block, two entrances: CLASSIC (top) + HERO (bottom) -->
+      <div class="card math combo">
+        <div class="combo-head">
+          <svg class="icon" viewBox="0 0 120 120" aria-hidden="true">
+            <circle cx="60" cy="60" r="40" fill="#ee6c2b" stroke="#7a3208" stroke-width="4"/>
+            <path d="M60 20 V100 M20 60 H100 M30 30 Q60 60 30 90 M90 30 Q60 60 90 90"
+                  fill="none" stroke="#7a3208" stroke-width="4"/>
+            <rect x="78" y="6" width="34" height="22" rx="3" fill="#fff7e8" stroke="#1c1208" stroke-width="3"/>
+            <text x="95" y="23" font-family="Luckiest Guy, cursive" font-size="14" fill="#1c1208" text-anchor="middle">+</text>
+          </svg>
+          <h2>MATH HOOPS</h2>
+          <div class="tag">Add numbers &amp; shoot the hoop</div>
+        </div>
+
+        <!-- TOP: classic Math Hoops (same orange style) -->
+        <div class="entrance classic" data-href="math-hoops.html">
+          <div class="ent-row">
+            <span class="ent-name">CLASSIC</span>
+            <span class="badge"><i>RECORD</i><b id="recMath">--:--</b></span>
+          </div>
+          <span class="play small">PLAY</span>
+        </div>
+
+        <!-- BOTTOM: Super Hero (hero style) -->
+        <div class="entrance hero" data-href="super-hero.html">
+          <div class="ent-row">
+            <span class="ent-name">HERO</span>
+            <span class="badge"><i>RECORD</i><b id="recHero">--:--</b></span>
+          </div>
+          <span class="play small">PLAY</span>
+        </div>
+      </div>
     </div>
 
     <footer>Made for curious kids · choose a game above</footer>
   </div>
 
 <script>
-  // Navigate on tap (works great for big touch targets on phone & iPad)
-  document.querySelectorAll('.card').forEach(function(card){
-    card.addEventListener('click', function(){
-      var href = card.getAttribute('data-href');
-      if(href) window.location.href = href;
+  // ---- show each game's best time (saved by the games in this browser) ----
+  function fmtTime(ms){
+    if(ms==null || isNaN(ms) || ms<0) return '--:--';
+    var tot=Math.floor(ms/1000), m=Math.floor(tot/60), s=tot%60;
+    return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+  function readBest(key){
+    try{ var v=localStorage.getItem(key); if(v!=null){ var n=parseInt(v,10); if(!isNaN(n)) return n; } }catch(e){}
+    return null;
+  }
+  var rm=document.getElementById('recMath');  if(rm) rm.textContent=fmtTime(readBest('mathHoopsBestMs_v1'));
+  var rh=document.getElementById('recHero');  if(rh) rh.textContent=fmtTime(readBest('superHeroBestMs_v1'));
+
+  // ---- navigate on tap (big touch targets for phone & iPad) ----
+  document.querySelectorAll('[data-href]').forEach(function(el){
+    el.addEventListener('click', function(){
+      var href=el.getAttribute('data-href');
+      if(href) window.location.href=href;
     });
   });
 </script>
