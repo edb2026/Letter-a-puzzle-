@@ -646,6 +646,9 @@
     const decoyCount=Math.max(2, Math.round(n*0.4));
     const all=parts.slice();
     for(let i=0;i<decoyCount;i++){ all.push(LO + ((Math.random()*(SPAN+1))|0)); }
+    // plus one small "helper" ball of EACH value 10..20 (no duplicates),
+    // the same set in every level (handy for topping up to the goal)
+    for(let v=10; v<=20; v++){ all.push(v); }
     // shuffle everything together
     for(let i=all.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [all[i],all[j]]=[all[j],all[i]]; }
     return all;
