@@ -1,0 +1,1021 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>Super Hero Hoops</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Luckiest+Guy&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --court:#3b4d8f;
+    --court-2:#26336a;
+    --line:#e3ecff;
+    --sky-1:#3a6fe0;
+    --sky-2:#8fd6ff;
+    --orange:#e23b3b;
+    --orange-d:#9c1818;
+    --net:#ffffff;
+    --rim:#ffd23f;
+    --rim-d:#c79a16;
+    --ink:#0b1230;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{
+    margin:0; padding:0; height:100%; width:100%;
+    overflow:hidden; position:fixed; inset:0;
+    overscroll-behavior:none; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    font-family:'Baloo 2', system-ui, sans-serif;
+    background:#0b1230;
+  }
+  #game{
+    position:absolute; inset:0;
+    background:
+      radial-gradient(120% 80% at 50% -10%, var(--sky-2) 0%, var(--sky-1) 35%, transparent 60%),
+      linear-gradient(180deg, #6fb6ff 0%, #3a6fe0 26%, #3b4d8f 46%, #26336a 100%);
+    overflow:hidden;
+  }
+  /* court floor + perspective lines */
+  #floor{
+    position:absolute; left:-10%; right:-10%; bottom:0; height:46%;
+    background:
+      repeating-linear-gradient(180deg, transparent 0 38px, rgba(0,0,0,.06) 38px 40px),
+      linear-gradient(180deg, var(--court) 0%, var(--court-2) 100%);
+    transform:perspective(520px) rotateX(34deg);
+    transform-origin:bottom center;
+    box-shadow:inset 0 14px 30px rgba(255,210,140,.35);
+  }
+  #floor::before{
+    content:""; position:absolute; left:50%; top:8%; width:64%; height:80%;
+    transform:translateX(-50%);
+    border:5px solid rgba(251,233,200,.55); border-radius:50%/40%;
+    border-bottom:none;
+  }
+
+  /* Scoreboard / GOAL frame top-right */
+  #goalCard{
+    position:absolute; top:max(14px, env(safe-area-inset-top)); right:14px;
+    z-index:40; text-align:center;
+    background:linear-gradient(180deg,#3a230d,#241404);
+    border:4px solid #ffd23f;
+    border-radius:18px;
+    padding:8px 16px 10px;
+    box-shadow:0 8px 0 rgba(0,0,0,.35), inset 0 0 0 2px rgba(255,255,255,.06);
+    min-width:104px;
+  }
+  #goalCard .lbl{
+    font-family:'Luckiest Guy', cursive; letter-spacing:1px;
+    color:#ffd23f; font-size:15px; text-shadow:0 2px 0 #000;
+  }
+  #goalNum{
+    font-family:'Luckiest Guy', cursive;
+    color:#fff; font-size:38px; line-height:1; margin-top:2px; white-space:nowrap;
+    text-shadow:0 3px 0 var(--orange-d), 0 0 18px rgba(255,210,63,.6);
+  }
+  #levelTag{
+    position:absolute; top:max(16px, env(safe-area-inset-top)); left:14px;
+    z-index:40;
+    font-family:'Luckiest Guy', cursive; color:#fff; font-size:15px;
+    background:rgba(0,0,0,.28); padding:6px 12px; border-radius:14px;
+    border:2px solid rgba(255,255,255,.35); text-shadow:0 2px 0 #000;
+  }
+  #menuBtn{
+    position:absolute; top:calc(max(16px, env(safe-area-inset-top)) + 40px); left:14px;
+    z-index:40; cursor:pointer; text-decoration:none;
+    font-family:'Baloo 2'; font-weight:700; color:#fff; font-size:13px;
+    background:rgba(0,0,0,.22); padding:5px 11px; border-radius:14px;
+    border:2px solid rgba(255,255,255,.3); display:inline-block;
+  }
+  #menuBtn:active{ transform:scale(.94); }
+  #resetBtn{
+    position:absolute; top:calc(max(16px, env(safe-area-inset-top)) + 78px); left:14px;
+    z-index:40; cursor:pointer;
+    font-family:'Baloo 2'; font-weight:700; color:#fff; font-size:13px;
+    background:rgba(0,0,0,.22); padding:5px 11px; border-radius:14px;
+    border:2px solid rgba(255,255,255,.3);
+  }
+  #resetBtn:active{ transform:scale(.94); }
+
+  /* Floating numbers */
+  .ball{
+    position:absolute; width:64px; height:64px; z-index:20;
+    touch-action:none; cursor:grab;
+    will-change:transform, left, top;
+  }
+  .ball .bob{
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:50%;
+    color:#fff7e8; font-family:'Luckiest Guy', cursive; font-size:30px;
+    text-shadow:0 2px 0 var(--orange-d);
+    background:
+      radial-gradient(60% 60% at 35% 30%, #ff8a8a 0%, var(--orange) 55%, var(--orange-d) 100%);
+    box-shadow:
+      inset 0 -8px 12px rgba(0,0,0,.28),
+      inset 0 6px 10px rgba(255,255,255,.35),
+      0 7px 12px rgba(0,0,0,.3);
+    position:relative;
+    animation:bob 3s ease-in-out infinite;
+  }
+  /* basketball seams */
+  .ball .bob::before, .ball .bob::after{
+    content:""; position:absolute; inset:6%;
+    border-radius:50%;
+    border:2.5px solid rgba(120,40,10,.55);
+    border-left-color:transparent; border-right-color:transparent;
+  }
+  .ball .bob::after{ transform:rotate(90deg); }
+  @keyframes bob{
+    0%,100%{ transform:translateY(0) rotate(-4deg); }
+    50%{ transform:translateY(-12px) rotate(4deg); }
+  }
+  .ball.dragging{ z-index:60; cursor:grabbing; }
+  .ball.dragging .bob{ animation:none; box-shadow:inset 0 -8px 12px rgba(0,0,0,.28), inset 0 6px 10px rgba(255,255,255,.4), 0 16px 26px rgba(0,0,0,.45); }
+  .ball.scored{ transition:transform .28s cubic-bezier(.5,-0.2,.7,1), opacity .28s; }
+  .ball.gone{ opacity:0; transform:scale(.2); pointer-events:none; }
+
+  /* Hoop */
+  #hoop{
+    position:absolute; left:50%; bottom:6%; z-index:30;
+    transform:translateX(-50%);
+    width:190px; pointer-events:none;
+  }
+  #backboard{
+    position:absolute; left:50%; bottom:120px; transform:translateX(-50%);
+    width:120px; height:80px; border-radius:8px;
+    background:linear-gradient(180deg,#fffdf7,#ece1c8);
+    border:5px solid #2b1605;
+    box-shadow:0 6px 0 rgba(0,0,0,.3);
+  }
+  #backboard .sq{
+    position:absolute; left:50%; bottom:8px; transform:translateX(-50%);
+    width:54px; height:40px; border:5px solid var(--rim);
+    border-radius:4px;
+  }
+  #rim{
+    position:absolute; left:50%; bottom:96px; transform:translateX(-50%);
+    width:130px; height:26px; border-radius:50%;
+    border:7px solid var(--rim);
+    background:rgba(255,81,38,.08);
+    box-shadow:0 3px 0 var(--rim-d);
+  }
+  #net{
+    position:absolute; left:50%; bottom:30px; transform:translateX(-50%);
+    width:120px; height:70px;
+    background:
+      repeating-linear-gradient(28deg, transparent 0 11px, rgba(255,246,230,.92) 11px 13px),
+      repeating-linear-gradient(-28deg, transparent 0 11px, rgba(255,246,230,.92) 11px 13px);
+    -webkit-mask:linear-gradient(180deg,#000 0%,#000 60%,transparent 100%);
+            mask:linear-gradient(180deg,#000 0%,#000 60%,transparent 100%);
+    clip-path:polygon(4% 0,96% 0,76% 100%,24% 100%);
+    filter:drop-shadow(0 3px 2px rgba(0,0,0,.25));
+  }
+  #net.swish{ animation:swish .5s ease; }
+  @keyframes swish{
+    0%,100%{ transform:translateX(-50%) scaleY(1); }
+    40%{ transform:translateX(-50%) scaleY(1.18); }
+  }
+  #pole{
+    position:absolute; left:50%; bottom:0; transform:translateX(-50%);
+    width:14px; height:130px; border-radius:7px;
+    background:linear-gradient(90deg,#555,#888,#444);
+  }
+
+  /* basket total bubble */
+  #total{
+    position:absolute; left:calc(50% + 95px); bottom:120px; z-index:35;
+    transform:translateX(-50%);
+    min-width:64px; padding:6px 10px; text-align:center;
+    background:linear-gradient(180deg,#1f6dff,#0b3fae);
+    border:4px solid #cfe3ff; border-radius:16px;
+    box-shadow:0 6px 0 rgba(0,0,0,.3);
+  }
+  #total .t-lbl{ font-size:11px; color:#cfe3ff; font-weight:700; letter-spacing:1px; }
+  #total .t-num{ font-family:'Luckiest Guy', cursive; font-size:28px; color:#fff; line-height:1; white-space:nowrap; text-shadow:0 2px 0 #06286e; }
+  #total.pop{ animation:pop .3s ease; }
+  @keyframes pop{ 0%{transform:translateX(-50%) scale(1);} 50%{transform:translateX(-50%) scale(1.22);} 100%{transform:translateX(-50%) scale(1);} }
+
+  /* fireworks + win overlay */
+  #fx{ position:absolute; inset:0; z-index:70; pointer-events:none; }
+  #win{
+    position:absolute; inset:0; z-index:80;
+    display:none; align-items:center; justify-content:center; flex-direction:column;
+    background:rgba(15,8,2,.55); backdrop-filter:blur(2px);
+    text-align:center; padding:20px;
+  }
+  #win.show{ display:flex; animation:fade .35s ease; }
+  @keyframes fade{ from{opacity:0;} to{opacity:1;} }
+  #win h1{
+    font-family:'Luckiest Guy', cursive; color:#ffd23f; font-size:54px; margin:0;
+    text-shadow:0 4px 0 var(--orange-d), 0 0 24px rgba(255,210,63,.7);
+    animation:bounceIn .5s ease;
+  }
+  @keyframes bounceIn{ 0%{transform:scale(.3);opacity:0;} 60%{transform:scale(1.15);} 100%{transform:scale(1);} }
+  #win p{ color:#fff; font-weight:700; font-size:22px; margin:8px 0 26px; }
+  .btn{
+    cursor:pointer; border:none; font-family:'Luckiest Guy', cursive; letter-spacing:1px;
+    color:#fff; font-size:26px; padding:16px 40px; border-radius:22px;
+    background:linear-gradient(180deg,#ff7a2e,#d8480f);
+    box-shadow:0 8px 0 #8f2d06, 0 12px 20px rgba(0,0,0,.4);
+    transition:transform .08s, box-shadow .08s;
+  }
+  .btn:active{ transform:translateY(5px); box-shadow:0 3px 0 #8f2d06, 0 6px 12px rgba(0,0,0,.4); }
+  #finalNote{ color:#cfe3ff; font-weight:700; margin-top:14px; font-size:15px; display:none; }
+
+  #startGate{
+    position:absolute; inset:0; z-index:90;
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    background:linear-gradient(180deg,#3a6fe0,#26336a);
+    text-align:center; padding:24px;
+  }
+  #startGate h1{
+    font-family:'Luckiest Guy', cursive; color:#fff; font-size:62px; margin:0;
+    text-shadow:0 5px 0 var(--orange-d), 0 0 30px rgba(255,210,63,.8); line-height:.95;
+  }
+  #startGate .sub{ color:#eaf2ff; font-weight:800; font-size:18px; margin:14px 0 30px; max-width:320px; }
+
+  /* ---- timer + record HUD (top center, during play) ---- */
+  #hudTop{
+    position:absolute; top:max(12px, env(safe-area-inset-top)); left:50%;
+    transform:translateX(-50%); z-index:38;
+    display:flex; flex-direction:column; gap:6px; align-items:center;
+    pointer-events:none;
+  }
+  .hudCard{
+    text-align:center; min-width:92px;
+    background:linear-gradient(180deg,#3a230d,#241404);
+    border:3px solid #ffd23f; border-radius:14px; padding:4px 14px 5px;
+    box-shadow:0 5px 0 rgba(0,0,0,.3), inset 0 0 0 2px rgba(255,255,255,.06);
+  }
+  .hudCard .t-lbl{
+    font-family:'Luckiest Guy', cursive; letter-spacing:1px;
+    color:#ffd23f; font-size:11px; text-shadow:0 2px 0 #000;
+  }
+  .hudCard .t-num{
+    font-family:'Luckiest Guy', cursive; color:#fff; font-size:26px; line-height:1;
+    text-shadow:0 2px 0 var(--orange-d);
+  }
+  #recordCard{ border-color:#cfe3ff; }
+  #recordCard .t-lbl{ color:#cfe3ff; }
+  @keyframes recpop{ 0%{transform:scale(1);} 50%{transform:scale(1.18);} 100%{transform:scale(1);} }
+  #recordCard.newrec{
+    animation:recpop .4s ease;
+    box-shadow:0 0 18px 5px rgba(255,210,63,.85), 0 5px 0 rgba(0,0,0,.3);
+  }
+
+  /* ---- record line on the start gate ---- */
+  #startRecord{
+    color:#eaf2ff; font-weight:800; font-size:16px; margin:0 0 26px;
+    background:rgba(255,255,255,.16); padding:9px 18px; border-radius:14px;
+    border:2px solid rgba(255,255,255,.3);
+  }
+  #startRecord b{ font-family:'Luckiest Guy', cursive; letter-spacing:1px; }
+
+  /* ---- win-screen time + record + new-record badge ---- */
+  #winTime{ display:none; color:#fff; font-weight:800; font-size:20px; margin:0 0 4px; }
+  #winNew{
+    display:none; color:#ffd23f; font-family:'Luckiest Guy', cursive;
+    font-size:28px; margin:2px 0 8px;
+    text-shadow:0 3px 0 var(--orange-d), 0 0 18px rgba(255,210,63,.85);
+    animation:bounceIn .5s ease;
+  }
+  #winNew.show{ display:block; }
+  #winRecord{ color:#cfe3ff; font-weight:800; font-size:16px; margin:0 0 22px; }
+  #winRecord b{ font-family:'Luckiest Guy', cursive; letter-spacing:1px; color:#fff; }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="floor"></div>
+
+  <div id="levelTag">Level 1 / 10</div>
+  <a id="menuBtn" href="index.html">🏠 Menu</a>
+  <div id="resetBtn">↺ Reset</div>
+
+  <div id="goalCard">
+    <div class="lbl">GOAL</div>
+    <div id="goalNum">10</div>
+  </div>
+
+  <div id="hudTop">
+    <div class="hudCard" id="timerCard">
+      <div class="t-lbl">TIME</div>
+      <div class="t-num" id="timerNum">00:00</div>
+    </div>
+    <div class="hudCard" id="recordCard">
+      <div class="t-lbl">YOUR RECORD</div>
+      <div class="t-num" id="recordNum">--:--</div>
+    </div>
+  </div>
+
+  <!-- balls injected here -->
+
+  <div id="hoop">
+    <div id="pole"></div>
+    <div id="backboard"><div class="sq"></div></div>
+    <div id="rim"></div>
+    <div id="net"></div>
+  </div>
+
+  <div id="total">
+    <div class="t-lbl">BASKET</div>
+    <div class="t-num" id="totalNum">0</div>
+  </div>
+
+  <canvas id="fx"></canvas>
+
+  <div id="win">
+    <h1 id="winTitle">YOU WON!</h1>
+    <p id="winSub">Want more?</p>
+    <div id="winTime"></div>
+    <div id="winNew">NEW RECORD!</div>
+    <div id="winRecord"></div>
+    <button class="btn" id="nextBtn">NEXT</button>
+    <div id="finalNote">You finished every level — math champion! Tap NEXT to play again.</div>
+  </div>
+
+  <div id="startGate">
+    <h1>SUPER<br>HERO</h1>
+    <div class="sub">Drag the hero numbers into the hoop. Add them up to hit the big GOAL — from 199 all the way to 1000!</div>
+    <div id="startRecord">YOUR RECORD <b id="startRecordNum">--:--</b></div>
+    <button class="btn" id="startBtn">PLAY</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  const LEVELS = [
+    { goal:199 },
+    { goal:234 },
+    { goal:378 },
+    { goal:470 },
+    { goal:591 },
+    { goal:645 },
+    { goal:733 },
+    { goal:888 },
+    { goal:902 },
+    { goal:1000 },
+  ];
+
+  // ball values are always in this range (inclusive)
+  const BALL_LO = 49, BALL_HI = 89;
+
+  const game   = document.getElementById('game');
+  const goalEl = document.getElementById('goalNum');
+  const totalEl= document.getElementById('totalNum');
+  const totalBox=document.getElementById('total');
+  const levelTag=document.getElementById('levelTag');
+  const hoop   = document.getElementById('hoop');
+  const net    = document.getElementById('net');
+  const winEl  = document.getElementById('win');
+  const fx     = document.getElementById('fx');
+  const ctx    = fx.getContext('2d');
+
+  // timer + best-record HUD
+  const timerNumEl  = document.getElementById('timerNum');
+  const recordNumEl = document.getElementById('recordNum');
+  const recordCard  = document.getElementById('recordCard');
+  const startRecEl  = document.getElementById('startRecordNum');
+  const winTimeEl   = document.getElementById('winTime');
+  const winNewEl    = document.getElementById('winNew');
+  const winRecEl    = document.getElementById('winRecord');
+
+  let levelIndex = 0;
+  let goal = LEVELS[0].goal;
+  let total = 0;
+  let balls = [];           // active ball elements
+  let busy = false;         // lock during win animation
+
+  // run timer (level 1 first touch -> 100 on the last level) + saved record
+  let timerRunning=false, timerFinished=false, runStartTs=0, runMs=0;
+  const REC_KEY='superHeroBestMs_v1';
+  let memBest=null;         // in-memory fallback if localStorage is blocked
+
+  /* ---------- AUDIO ---------- */
+  let ac = null;
+  function audio(){
+    if(!ac){ try{ ac = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} }
+    if(ac && ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  // metallic CLANG when the ball is too big and bounces off
+  function clang(){
+    const c = audio(); if(!c) return;
+    const t = c.currentTime;
+    const freqs = [523, 784, 1046, 1318];
+    freqs.forEach((f,i)=>{
+      const o = c.createOscillator(), g = c.createGain();
+      o.type='square'; o.frequency.value = f*(1+ i*0.01);
+      g.gain.setValueAtTime(0.0001,t);
+      g.gain.exponentialRampToValueAtTime(0.18,t+0.005);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+0.45);
+      o.connect(g); g.connect(c.destination);
+      o.start(t); o.stop(t+0.5);
+    });
+    // noise burst
+    const buf = c.createBuffer(1, c.sampleRate*0.15, c.sampleRate);
+    const d = buf.getChannelData(0);
+    for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
+    const n = c.createBufferSource(); n.buffer=buf;
+    const bp = c.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=2200; bp.Q.value=2;
+    const ng = c.createGain(); ng.gain.value=0.25;
+    n.connect(bp); bp.connect(ng); ng.connect(c.destination); n.start(t);
+  }
+  // soft "swish" plonk when a good ball drops in
+  function swishSound(){
+    const c=audio(); if(!c) return;
+    const t=c.currentTime;
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(700,t); o.frequency.exponentialRampToValueAtTime(220,t+0.18);
+    g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.3);
+  }
+  // soft low "thud" when a ball is dropped away from the hoop (a plain miss)
+  function missThud(){
+    const c=audio(); if(!c) return;
+    const t=c.currentTime;
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='sine'; o.frequency.setValueAtTime(190,t); o.frequency.exponentialRampToValueAtTime(90,t+0.12);
+    g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.18);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.2);
+  }
+  function fireworkPop(){
+    const c=audio(); if(!c) return;
+    const t=c.currentTime;
+    const o=c.createOscillator(), g=c.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(120+Math.random()*200,t);
+    o.frequency.exponentialRampToValueAtTime(1400,t+0.05);
+    g.gain.setValueAtTime(0.18,t); g.gain.exponentialRampToValueAtTime(0.0001,t+0.5);
+    o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+0.55);
+  }
+  // soft, pleasant "rustle / whoosh" for screen + level transitions and taps
+  function whoosh(){
+    const c=audio(); if(!c) return;
+    const t=c.currentTime;
+    const dur=0.5;
+    const buf=c.createBuffer(1, Math.floor(c.sampleRate*dur), c.sampleRate);
+    const d=buf.getChannelData(0);
+    for(let i=0;i<d.length;i++){
+      const env=Math.sin(Math.PI*i/d.length);     // gentle swell in + out
+      d[i]=(Math.random()*2-1)*env;
+    }
+    const src=c.createBufferSource(); src.buffer=buf;
+    const bp=c.createBiquadFilter(); bp.type='bandpass'; bp.Q.value=0.7;
+    bp.frequency.setValueAtTime(450,t);
+    bp.frequency.exponentialRampToValueAtTime(2600,t+dur*0.55);
+    bp.frequency.exponentialRampToValueAtTime(700,t+dur);
+    const g=c.createGain(); g.gain.value=0.16;
+    src.connect(bp); bp.connect(g); g.connect(c.destination);
+    src.start(t); src.stop(t+dur);
+  }
+  // triumphant, pleasant chord/arpeggio when a level is won
+  function winFanfare(){
+    const c=audio(); if(!c) return;
+    const t=c.currentTime;
+    const notes=[523.25,659.25,783.99,1046.5];     // C major arpeggio up
+    notes.forEach((f,i)=>{
+      const dt=i*0.13, o=c.createOscillator(), g=c.createGain();
+      o.type='triangle'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t+dt);
+      g.gain.exponentialRampToValueAtTime(0.24,t+dt+0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dt+0.6);
+      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.66);
+    });
+    [1567.98,2093].forEach((f,i)=>{                 // sparkly bells on top
+      const dt=0.32+i*0.1, o=c.createOscillator(), g=c.createGain();
+      o.type='sine'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t+dt);
+      g.gain.exponentialRampToValueAtTime(0.14,t+dt+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dt+0.5);
+      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.55);
+    });
+  }
+
+  /* ---------- VOICE ---------- */
+  let maleVoice=null, femaleVoice=null;
+  function pickVoices(){
+    if(!('speechSynthesis' in window)) return;
+    const vs = speechSynthesis.getVoices();
+    if(!vs.length) return;
+    const en = vs.filter(v=>/en[-_]/i.test(v.lang) || /english/i.test(v.name));
+    const pool = en.length ? en : vs;
+    femaleVoice = pool.find(v=>/female|samantha|victoria|karen|moira|tessa|susan|zira|fiona|serena|allison|ava|joanna|amy|emma|nicky|kate|hazel|libby/i.test(v.name))
+               || pool.find(v=>/female/i.test(v.gender||''))
+               || pool[0];
+    maleVoice  = pool.find(v=>(/male|david|daniel|alex|fred|george|james|arthur|guy|rishi|aaron|tom|oliver|mark|ryan/i.test(v.name)) && !/female/i.test(v.name))
+               || pool.find(v=>v!==femaleVoice)
+               || pool[0];
+  }
+  if('speechSynthesis' in window){
+    pickVoices();
+    speechSynthesis.onvoiceschanged = pickVoices;
+  }
+  function mkUtter(text, voice, pitch, rate){
+    const u = new SpeechSynthesisUtterance(text);
+    if(voice) u.voice = voice;
+    u.lang = (voice && voice.lang) || 'en-US';
+    u.pitch = pitch; u.rate = rate; u.volume = 1;
+    return u;
+  }
+  // pleasant FEMALE voice announces the number in the blue square
+  function sayNumber(n){
+    if(!('speechSynthesis' in window)) return;
+    try{ speechSynthesis.cancel(); speechSynthesis.speak(mkUtter(String(n), femaleVoice, 1.15, 1.0)); }catch(e){}
+  }
+  // female says the final number, then MALE delivers the win/champion line (queued, no overlap)
+  function sayWin(numberText, line){
+    if(!('speechSynthesis' in window)) return;
+    try{
+      speechSynthesis.cancel();
+      if(numberText!=null) speechSynthesis.speak(mkUtter(String(numberText), femaleVoice, 1.15, 1.0));
+      speechSynthesis.speak(mkUtter(line, maleVoice, 0.7, 0.95));
+    }catch(e){}
+  }
+
+  /* ---------- TIMER + BEST RECORD ---------- */
+  function fmtTime(ms){
+    if(ms==null || ms<0) return '--:--';
+    const tot = Math.floor(ms/1000);
+    const m = Math.floor(tot/60), s = tot%60;
+    return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+  }
+  // record is stored per-device in this browser's localStorage; no server, no
+  // accounts, so different children on different devices never share a record.
+  function getBest(){
+    try{
+      const v = localStorage.getItem(REC_KEY);
+      if(v!=null){ const n=parseInt(v,10); if(!isNaN(n)) return n; }
+    }catch(e){}
+    return memBest;
+  }
+  function setBest(ms){
+    memBest = ms;
+    try{ localStorage.setItem(REC_KEY, String(ms)); }catch(e){}
+  }
+  function updateRecordUI(){
+    const best = getBest();
+    const txt = (best==null) ? '--:--' : fmtTime(best);
+    if(recordNumEl) recordNumEl.textContent = txt;
+    if(startRecEl)  startRecEl.textContent  = txt;
+    if(winRecEl)    winRecEl.innerHTML       = 'YOUR RECORD <b>'+txt+'</b>';
+  }
+  function startRunTimer(){           // first ball touch on level 1
+    if(timerRunning || timerFinished) return;
+    timerRunning = true;
+    runStartTs = Date.now();
+  }
+  function resetRunTimer(){           // fresh run begins (back at level 1)
+    timerRunning = false; timerFinished = false; runMs = 0; runStartTs = 0;
+    if(timerNumEl) timerNumEl.textContent = fmtTime(0);
+  }
+  function finishRun(){               // 100 reached on the last level
+    if(!timerRunning) return null;
+    timerRunning = false; timerFinished = true;
+    runMs = Date.now() - runStartTs;
+    if(timerNumEl) timerNumEl.textContent = fmtTime(runMs);
+    return runMs;
+  }
+  // live digital tick so the child sees the time running
+  setInterval(()=>{
+    if(timerRunning && timerNumEl){
+      timerNumEl.textContent = fmtTime(Date.now()-runStartTs);
+    }
+  }, 200);
+  // happy chime when a new record is set
+  function recordChime(){
+    const c=audio(); if(!c) return;
+    const t=c.currentTime;
+    [660,880,1320].forEach((f,i)=>{
+      const dt=i*0.12, o=c.createOscillator(), g=c.createGain();
+      o.type='triangle'; o.frequency.value=f;
+      g.gain.setValueAtTime(0.0001,t+dt);
+      g.gain.exponentialRampToValueAtTime(0.22,t+dt+0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001,t+dt+0.3);
+      o.connect(g); g.connect(c.destination); o.start(t+dt); o.stop(t+dt+0.34);
+    });
+  }
+
+  /* ---------- LAYOUT HELPERS ---------- */
+  function fieldRect(){ return game.getBoundingClientRect(); }
+  function hoopDropZone(){
+    // generous drop area around the rim opening
+    const r = document.getElementById('rim').getBoundingClientRect();
+    return { x:r.left-45, y:r.top-75, w:r.width+90, h:r.height+130 };
+  }
+
+  function resizeCanvas(){
+    fx.width = game.clientWidth; fx.height = game.clientHeight;
+  }
+  window.addEventListener('resize', ()=>{ resizeCanvas(); clampBalls(); });
+
+  /* ---------- BALLS ---------- */
+  function clearBalls(){ balls.forEach(b=>b.remove()); balls = []; }
+
+  // Build the balls for a level. We ALWAYS include an exact partition of the
+  // goal using values in [49,89] (so the level is guaranteed winnable), plus a
+  // few extra "decoy" balls for choice. A safety check at drop time makes sure
+  // a child can never get permanently stuck (see attemptDrop).
+  function buildBalls(goal){
+    const LO=BALL_LO, HI=BALL_HI, SPAN=HI-LO;
+    const nMin=Math.ceil(goal/HI), nMax=Math.floor(goal/LO);
+    let n=Math.max(nMin, Math.min(nMax, Math.round(goal/64)));   // ball count, scales with goal
+    // exact partition that sums to the goal, each part in [49,89]
+    const parts=new Array(n).fill(LO);
+    let extra=goal-LO*n;                                          // amount to spread out
+    const order=[...Array(n).keys()];
+    for(let i=n-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [order[i],order[j]]=[order[j],order[i]]; }
+    for(const j of order){
+      if(extra<=0) break;
+      const room=SPAN-(parts[j]-LO);
+      const give=Math.min(room, (Math.random()*(extra+1))|0);
+      parts[j]+=give; extra-=give;
+    }
+    for(let k=0;k<n && extra>0;k++){                              // make sure it lands exactly
+      const room=SPAN-(parts[k]-LO);
+      const give=Math.min(room,extra);
+      parts[k]+=give; extra-=give;
+    }
+    // a handful of extra decoy balls (also 49..89) so picking matters
+    const decoyCount=Math.max(2, Math.round(n*0.4));
+    const all=parts.slice();
+    for(let i=0;i<decoyCount;i++){ all.push(LO + ((Math.random()*(SPAN+1))|0)); }
+    // shuffle everything together
+    for(let i=all.length-1;i>0;i--){ const j=(Math.random()*(i+1))|0; [all[i],all[j]]=[all[j],all[i]]; }
+    return all;
+  }
+
+  // can some subset of these values sum exactly to target? (small DP, cheap)
+  function canMake(values, target){
+    if(target===0) return true;
+    if(target<0)   return false;
+    const dp=new Uint8Array(target+1); dp[0]=1;
+    for(const v of values){
+      if(v>target) continue;
+      for(let s=target; s>=v; s--){ if(dp[s-v]) dp[s]=1; }
+    }
+    return !!dp[target];
+  }
+  function fieldValues(except){
+    return balls.filter(b=>b!==except).map(b=>parseInt(b.dataset.val,10));
+  }
+
+  function spawnLevel(){
+    whoosh();                              // pleasant rustle on every level transition
+    clearBalls();
+    busy = false;
+    total = 0;
+    setTotal(0, false);
+    if(levelIndex===0) resetRunTimer();   // a fresh run always begins at level 1
+    if(recordCard) recordCard.classList.remove('newrec');
+    updateRecordUI();
+    const cfg = LEVELS[levelIndex];
+    goal = cfg.goal;
+    goalEl.textContent = goal;
+    levelTag.textContent = 'Level '+(levelIndex+1)+' / '+LEVELS.length;
+
+    const fr = fieldRect();
+    const ballSize = fr.width < 420 ? 56 : 64;
+    // spawn region: avoid top bars and the bottom hoop area
+    const top = 90;
+    const bottom = fr.height * 0.55;   // keep above the hoop zone
+    const left = 8;
+    const right = fr.width - ballSize - 8;
+
+    const values = buildBalls(goal);
+
+    values.forEach(val=>{
+      const el = document.createElement('div');
+      el.className='ball';
+      el.style.width = el.style.height = ballSize+'px';
+      const inner = document.createElement('div');
+      inner.className='bob';
+      inner.textContent = val;
+      inner.style.fontSize = (ballSize*0.40)+'px';   // a touch smaller for 2-digit numbers
+      el.appendChild(inner);
+      el.dataset.val = val;
+      const x = left + Math.random()*Math.max(40,(right-left));
+      const y = top  + Math.random()*Math.max(40,(bottom-top));
+      el.style.left = x+'px';
+      el.style.top  = y+'px';
+      el.querySelector('.bob').style.animationDelay = (-Math.random()*3)+'s';
+      el.querySelector('.bob').style.animationDuration = (2.4+Math.random()*1.6)+'s';
+      attachDrag(el);
+      game.appendChild(el);
+      balls.push(el);
+    });
+  }
+
+  function clampBalls(){
+    const fr = fieldRect();
+    balls.forEach(el=>{
+      const sz = el.offsetWidth;
+      let x = parseFloat(el.style.left), y = parseFloat(el.style.top);
+      x = Math.min(Math.max(4, x), fr.width - sz - 4);
+      y = Math.min(Math.max(80, y), fr.height - sz - 4);
+      el.style.left = x+'px'; el.style.top = y+'px';
+    });
+  }
+
+  function setTotal(v, pop, announce){
+    total = v;
+    totalEl.textContent = v;
+    if(pop){ totalBox.classList.remove('pop'); void totalBox.offsetWidth; totalBox.classList.add('pop'); }
+    if(announce && v>0 && v!==goal) sayNumber(v);  // female reads the blue-square number
+  }
+
+  /* ---------- DRAG ---------- */
+  function attachDrag(el){
+    let startX, startY, baseX, baseY, dragging=false, pid=null;
+
+    el.addEventListener('pointerdown', e=>{
+      if(busy) return;
+      audio();
+      startRunTimer();   // first touch on level 1 starts the clock; later levels: no-op
+      // kill any leftover bounce animation so the ball drags from where it
+      // actually is and its drop position is measured correctly
+      el.style.transition = ''; el.style.transform = '';
+      dragging = true; pid = e.pointerId;
+      el.setPointerCapture(pid);
+      el.classList.add('dragging');
+      startX = e.clientX; startY = e.clientY;
+      baseX = parseFloat(el.style.left); baseY = parseFloat(el.style.top);
+      e.preventDefault();
+    });
+
+    el.addEventListener('pointermove', e=>{
+      if(!dragging || e.pointerId!==pid) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      el.style.left = (baseX+dx)+'px';
+      el.style.top  = (baseY+dy)+'px';
+      e.preventDefault();
+    });
+
+    function end(e){
+      if(!dragging || e.pointerId!==pid) return;
+      dragging = false;
+      try{ el.releasePointerCapture(pid); }catch(_){}
+      el.classList.remove('dragging');
+      attemptDrop(el);
+    }
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+  }
+
+  function overlapsHoop(el){
+    // VERY forgiving catch (this is a kids' game — precise aim is NOT required).
+    // We build a generous catch box that covers the whole opening: the rim AND
+    // the net below it, a good bit wider on each side, reaching above for the
+    // entry and all the way down through the net. A ball counts if EITHER its
+    // center is inside the box OR the ball even partly overlaps the box. So any
+    // ball dropped through the ring -- or just a little wider than the ring, or
+    // dragged down through the net -- ALWAYS enters the system (scored if it
+    // fits the goal, bounced if it's too big). It never silently disappears.
+    const rim  = document.getElementById('rim').getBoundingClientRect();
+    const netR = document.getElementById('net').getBoundingClientRect();
+    const b    = el.getBoundingClientRect();
+
+    const padX   = b.width  * 0.9 + 44;                                     // "a little wider than the ring"
+    const top    = rim.top  - (b.height * 1.0 + 100);                       // well above the rim (coming in)
+    const bottom = Math.max(rim.bottom, netR.bottom) + b.height * 1.0 + 55; // down through the whole net
+    const left   = Math.min(rim.left,  netR.left)  - padX;
+    const right  = Math.max(rim.right, netR.right) + padX;
+
+    // center inside the box
+    const bx = b.left + b.width/2, by = b.top + b.height/2;
+    const centerIn = bx >= left && bx <= right && by >= top && by <= bottom;
+
+    // OR the ball rectangle touches the box at all (extra forgiving on the edges)
+    const touches = b.right >= left && b.left <= right && b.bottom >= top && b.top <= bottom;
+
+    return centerIn || touches;
+  }
+
+  function attemptDrop(el){
+    if(busy) return;
+    const val = parseInt(el.dataset.val,10);
+
+    if(!overlapsHoop(el)){
+      // dropped away from the hoop -> soft thud and collect it on the LEFT
+      missThud();
+      sendToLeft(el);
+      return;
+    }
+    const newTotal = total + val;
+    if(newTotal > goal){
+      bounceOff(el);              // too big -> bounce off the net with a clang, collect LEFT
+      return;
+    }
+    if(newTotal < goal){
+      // Would taking this ball strand the player? Only allow the shot if the
+      // REMAINING balls can still add up exactly to what's left. Otherwise it
+      // bounces off -- so the level always stays winnable (no dead ends, ever).
+      if(!canMake(fieldValues(el), goal - newTotal)){
+        bounceOff(el);
+        return;
+      }
+    }
+    // good (and safe) shot
+    scoreBall(el, val);
+  }
+
+  // park a non-scoring ball on the LEFT side, away from the hoop
+  function sendToLeft(el){
+    const fr = fieldRect();
+    const sz = el.offsetWidth;
+    const bandW = Math.max(sz + 8, fr.width * 0.24);     // a column on the far left
+    const nx = 6 + Math.random() * Math.max(8, bandW - sz);
+    const ny = 120 + Math.random() * Math.max(40, fr.height * 0.58 - 120);
+    el.style.transition = 'left .5s cubic-bezier(.3,1.3,.6,1), top .5s cubic-bezier(.3,1.3,.6,1), transform .5s';
+    el.style.transform  = 'rotate(' + ((Math.random()*24-12)|0) + 'deg)';
+    el.style.left = nx + 'px';
+    el.style.top  = ny + 'px';
+    setTimeout(()=>{ el.style.transition=''; el.style.transform=''; }, 560);
+  }
+
+  function scoreBall(el, val){
+    swishSound();
+    net.classList.remove('swish'); void net.offsetWidth; net.classList.add('swish');
+    // animate the ball sinking into the rim then vanish
+    const rim = document.getElementById('rim').getBoundingClientRect();
+    const b = el.getBoundingClientRect();
+    const tx = (rim.left + rim.width/2) - (b.left + b.width/2);
+    const ty = (rim.top  + rim.height/2) - (b.top + b.height/2);
+    el.classList.add('scored');
+    el.style.transform = `translate(${tx}px, ${ty}px) scale(.55)`;
+    el.style.pointerEvents='none';
+    balls = balls.filter(x=>x!==el);
+    setTimeout(()=>{ el.classList.add('gone'); }, 240);
+    setTimeout(()=>{ el.remove(); }, 560);
+
+    setTotal(total + val, true, true);
+
+    if(total === goal){
+      win();
+    }
+  }
+
+  function bounceOff(el){
+    clang();
+    net.classList.remove('swish'); void net.offsetWidth; net.classList.add('swish');
+    // too-big ball is rejected by the rim -> collect it on the LEFT side
+    sendToLeft(el);
+  }
+
+  /* ---------- WIN + FIREWORKS ---------- */
+  function win(){
+    busy = true;
+    const last = levelIndex === LEVELS.length-1;
+
+    let finalMs=null, isNewRecord=false;
+    if(last){
+      finalMs = finishRun();                 // stop the run clock at 100
+      if(finalMs!=null){
+        const best = getBest();
+        if(best==null || finalMs < best){ setBest(finalMs); isNewRecord = true; }
+      }
+    }
+    updateRecordUI();
+
+    // final win shows this run's time (and NEW RECORD if beaten); others hide it
+    if(last && finalMs!=null){
+      winTimeEl.textContent = 'Your time: ' + fmtTime(finalMs);
+      winTimeEl.style.display = 'block';
+    }else{
+      winTimeEl.textContent = '';
+      winTimeEl.style.display = 'none';
+    }
+    winNewEl.classList.toggle('show', isNewRecord);
+    if(isNewRecord && recordCard) recordCard.classList.add('newrec');
+
+    document.getElementById('winTitle').textContent = last ? 'CHAMPION!' : 'YOU WON!';
+    document.getElementById('winSub').textContent   = last ? 'You are a real champion!' : 'Want more?';
+    document.getElementById('finalNote').style.display = last ? 'block':'none';
+    winEl.classList.add('show');
+    winFanfare();        // pleasant triumphant sound on every win
+    if(last){
+      if(isNewRecord) recordChime();
+      startConfetti();   // lots of falling confetti across the screen
+      startFireworks();
+      sayWin(goal, isNewRecord ? "New record! You are a real champion!"
+                               : "You won! You are a real champion!");
+    }else{
+      startFireworks();
+      sayWin(goal, "You won! Want more?");
+    }
+  }
+
+  // particle fireworks
+  let particles = [], fwTimer=null, fwRAF=null, confetti=[], confettiTimer=null;
+  function startFireworks(){
+    resizeCanvas();
+    particles = [];
+    let bursts = 0;
+    clearInterval(fwTimer);
+    fwTimer = setInterval(()=>{
+      burst(Math.random()*fx.width, Math.random()*fx.height*0.6+40);
+      fireworkPop();
+      if(++bursts>=6){ clearInterval(fwTimer); }
+    }, 350);
+    burst(fx.width*0.5, fx.height*0.35); fireworkPop();
+    if(!fwRAF) fwLoop();
+  }
+  function burst(x,y){
+    const colors=['#ffd23f','#ff7a2e','#ff5126','#1f6dff','#5be37e','#ff5bb0','#fff'];
+    const col = colors[(Math.random()*colors.length)|0];
+    const n = 34;
+    for(let i=0;i<n;i++){
+      const a = (Math.PI*2*i)/n + Math.random()*0.2;
+      const sp = 2+Math.random()*4.5;
+      particles.push({x,y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,life:1,col});
+    }
+  }
+  function fwLoop(){
+    fwRAF = requestAnimationFrame(fwLoop);
+    ctx.clearRect(0,0,fx.width,fx.height);
+    // fireworks
+    for(let i=particles.length-1;i>=0;i--){
+      const p=particles[i];
+      p.x+=p.vx; p.y+=p.vy; p.vy+=0.07; p.vx*=0.99; p.life-=0.016;
+      if(p.life<=0){ particles.splice(i,1); continue; }
+      ctx.globalAlpha=Math.max(0,p.life);
+      ctx.fillStyle=p.col;
+      ctx.beginPath(); ctx.arc(p.x,p.y,3.2,0,7); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+    // falling confetti
+    for(let i=confetti.length-1;i>=0;i--){
+      const c=confetti[i];
+      c.vy+=0.08; c.y+=c.vy; c.sway+=0.09; c.x+=c.vx + Math.sin(c.sway)*0.9; c.rot+=c.vr;
+      if(c.y>fx.height+24){ confetti.splice(i,1); continue; }
+      ctx.save();
+      ctx.translate(c.x,c.y); ctx.rotate(c.rot);
+      ctx.fillStyle=c.col;
+      ctx.fillRect(-c.w/2,-c.h/2,c.w,c.h);
+      ctx.restore();
+    }
+    if(particles.length===0 && confetti.length===0 && !winEl.classList.contains('show')){
+      cancelAnimationFrame(fwRAF); fwRAF=null; ctx.clearRect(0,0,fx.width,fx.height);
+    }
+  }
+
+  function startConfetti(){
+    resizeCanvas();
+    const colors=['#ffd23f','#ff7a2e','#ff5126','#1f6dff','#5be37e','#ff5bb0','#ffffff','#9b5bff','#00d3c7'];
+    clearInterval(confettiTimer);
+    let t=0;
+    confettiTimer=setInterval(()=>{
+      for(let k=0;k<16;k++){
+        confetti.push({
+          x:Math.random()*fx.width, y:-20-Math.random()*60,
+          vx:(Math.random()*2-1)*1.1, vy:2+Math.random()*3,
+          w:7+Math.random()*8, h:11+Math.random()*11,
+          rot:Math.random()*6.28, vr:(Math.random()*2-1)*0.25,
+          sway:Math.random()*6.28,
+          col:colors[(Math.random()*colors.length)|0]
+        });
+      }
+      if(++t>=26) clearInterval(confettiTimer);  // ~4s of falling confetti
+    },150);
+    if(!fwRAF) fwLoop();
+  }
+
+  /* ---------- BUTTONS ---------- */
+  document.getElementById('nextBtn').addEventListener('click', ()=>{
+    winEl.classList.remove('show');
+    clearInterval(fwTimer); clearInterval(confettiTimer); particles=[]; confetti=[];
+    if(fwRAF){ cancelAnimationFrame(fwRAF); fwRAF=null; }
+    ctx.clearRect(0,0,fx.width,fx.height);
+    levelIndex = (levelIndex+1) % LEVELS.length;  // loop back after the last
+    spawnLevel();
+  });
+
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    if(busy) return;
+    spawnLevel();
+  });
+
+  document.getElementById('startBtn').addEventListener('click', ()=>{
+    audio();
+    // prime speech engine + voices on first gesture (some browsers require it)
+    pickVoices();
+    try{ speechSynthesis.cancel(); speechSynthesis.speak(mkUtter(' ', femaleVoice, 1.1, 1)); }catch(e){}
+    document.getElementById('startGate').style.display='none';
+    resizeCanvas();
+    spawnLevel();
+  });
+
+  // safety: keep canvas sized + show 00:00 and the saved record on load
+  resetRunTimer();
+  updateRecordUI();
+  resizeCanvas();
+})();
+</script>
+</body>
+</html>
