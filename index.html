@@ -17,6 +17,7 @@
   │    • Letters puzzle   -> data-href="letters.html"                 │
   │    • Math basketball  -> data-href="math-hoops.html"  (classic)   │
   │    • Super Hero hoops -> data-href="super-hero.html"  (hero)      │
+    │    • Calorie Monster  -> data-href="calorie-monster.html"         │
   └──────────────────────────────────────────────────────────────────┘
 -->
 <style>
@@ -30,6 +31,8 @@
     --hero-1:#3a6fe0;
     --hero-2:#26336a;
     --hero-gold:#ffd23f;
+    --monster-1:#c77dff;
+    --monster-2:#7b2ff7;
     --cream:#fff7e8;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -91,6 +94,7 @@
 
   .card.letters{ background:linear-gradient(165deg, var(--letters-1), var(--letters-2)); }
   .card.math{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); }
+  .card.monster{ background:linear-gradient(165deg, var(--monster-1), var(--monster-2)); }
   .card::after{ /* shine */
     content:""; position:absolute; top:-40%; left:-30%; width:60%; height:180%;
     background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
@@ -215,6 +219,24 @@
           <span class="play small">PLAY</span>
         </div>
       </div>
+
+      <!-- CALORIE MONSTER — change data-href if your file has another name -->
+      <a class="card monster" data-href="calorie-monster.html">
+        <svg class="icon" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="62" r="42" fill="#ff5d8f" stroke="#1c1208" stroke-width="4"/>
+          <circle cx="46" cy="52" r="13" fill="#fff" stroke="#1c1208" stroke-width="3"/>
+          <circle cx="74" cy="52" r="13" fill="#fff" stroke="#1c1208" stroke-width="3"/>
+          <circle cx="48" cy="54" r="5" fill="#1c1208"/>
+          <circle cx="72" cy="54" r="5" fill="#1c1208"/>
+          <path d="M40 78 Q60 96 80 78" fill="#7a1030" stroke="#1c1208" stroke-width="4" stroke-linecap="round"/>
+          <path d="M46 82 L50 90 M60 84 L60 93 M74 82 L70 90" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+          <path d="M30 26 l8 14 l-16 2 z" fill="#ffd23f" stroke="#1c1208" stroke-width="3"/>
+          <path d="M90 26 l-8 14 l16 2 z" fill="#ffd23f" stroke="#1c1208" stroke-width="3"/>
+        </svg>
+        <h2>CALORIE MONSTER</h2>
+        <p>Feed the monster &amp; rescue the kitten</p>
+        <span class="play">PLAY</span>
+      </a>
     </div>
 
     <footer>Made for curious kids · choose a game above</footer>
