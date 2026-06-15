@@ -28,17 +28,17 @@
 -->
 <style>
   :root{
-    --bg-1:#2747e6;
-    --bg-2:#0a1568;
-    --letters-1:#2bf0e0;
-    --letters-2:#0aa6dd;
-    --math-1:#ffa42b;
-    --math-2:#ff4b0a;
-    --hero-1:#3a86ff;
-    --hero-2:#172a8c;
+    --bg-1:#8a2bff;
+    --bg-2:#4310ad;
+    --letters-1:#00e8df;
+    --letters-2:#0093e6;
+    --math-1:#ff9500;
+    --math-2:#ff2a00;
+    --hero-1:#2f7bff;
+    --hero-2:#161f8c;
     --hero-gold:#ffd23f;
-    --monster-1:#ff63d6;
-    --monster-2:#8a25ff;
+    --monster-1:#ff36cf;
+    --monster-2:#9b14ff;
     --cream:#fff7e8;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -47,10 +47,10 @@
     font-family:'Baloo 2', system-ui, sans-serif;
     color:var(--cream);
     background:
-      radial-gradient(75% 55% at 16% 6%, rgba(255,214,64,.65) 0%, transparent 46%),
-      radial-gradient(70% 55% at 102% 2%, rgba(56,230,255,.7) 0%, transparent 50%),
-      radial-gradient(85% 65% at 100% 100%, rgba(255,91,200,.62) 0%, transparent 52%),
-      radial-gradient(75% 60% at 0% 100%, rgba(91,227,126,.5) 0%, transparent 52%),
+      radial-gradient(72% 52% at 14% 5%, rgba(255,214,64,.8) 0%, transparent 46%),
+      radial-gradient(70% 55% at 104% 1%, rgba(56,230,255,.85) 0%, transparent 50%),
+      radial-gradient(88% 66% at 102% 100%, rgba(255,63,190,.85) 0%, transparent 52%),
+      radial-gradient(78% 60% at -2% 100%, rgba(91,227,126,.65) 0%, transparent 52%),
       linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
     background-attachment:fixed;
     overflow-x:hidden;
@@ -78,7 +78,10 @@
   h1{
     font-family:'Luckiest Guy', cursive; font-size:clamp(42px, 11vw, 78px);
     margin:14px 0 4px; line-height:.95;
-    text-shadow:0 5px 0 rgba(0,0,0,.28), 0 0 26px rgba(56,230,255,.7), 0 0 48px rgba(255,210,63,.55);
+    background:linear-gradient(95deg, #ffe14d 0%, #ff4fb0 42%, #38e6ff 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    -webkit-text-stroke:2px rgba(255,255,255,.9);
+    filter:drop-shadow(0 4px 0 rgba(0,0,0,.32)) drop-shadow(0 0 22px rgba(56,230,255,.7)) drop-shadow(0 0 30px rgba(255,79,176,.5));
   }
   .sub{ font-weight:700; font-size:clamp(15px,4vw,19px); opacity:.92; max-width:520px; text-align:center; }
 
@@ -101,9 +104,9 @@
   .card:active{ transform:translateY(7px); box-shadow:0 7px 0 rgba(0,0,0,.22), 0 14px 24px rgba(0,0,0,.3), 0 0 30px var(--glow, transparent); }
   @media (hover:hover){ .card:hover{ transform:translateY(-6px) rotate(-.5deg); box-shadow:0 18px 0 rgba(0,0,0,.22), 0 28px 46px rgba(0,0,0,.34), 0 0 60px var(--glow, transparent); } }
 
-  .card.letters{ background:linear-gradient(165deg, var(--letters-1), var(--letters-2)); --glow:rgba(43,240,224,.55); }
-  .card.math{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); --glow:rgba(255,120,30,.5); }
-  .card.monster{ background:linear-gradient(165deg, var(--monster-1), var(--monster-2)); --glow:rgba(255,99,214,.55); }
+  .card.letters{ background:linear-gradient(165deg, var(--letters-1), var(--letters-2)); --glow:rgba(0,232,223,.65); }
+  .card.math{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); --glow:rgba(255,80,0,.6); }
+  .card.monster{ background:linear-gradient(165deg, var(--monster-1), var(--monster-2)); --glow:rgba(255,54,207,.65); }
   /* glossy top sheen, like the app icon */
   .card::before{
     content:""; position:absolute; left:0; right:0; top:0; height:55%; border-radius:23px 23px 50% 50%;
@@ -131,9 +134,9 @@
 
   /* ---- combined MATH HOOPS card: shared title + two entrances ---- */
   .card.combo{
-    background:linear-gradient(165deg, #4733a8, #1e1566);
+    background:linear-gradient(165deg, #6a25e0, #2a0e8c);
     justify-content:flex-start; gap:14px; cursor:default;
-    --glow:rgba(122,80,255,.5);
+    --glow:rgba(150,40,255,.6);
   }
   .combo-head{ display:flex; flex-direction:column; align-items:center; }
   .combo .icon{ width:78px; height:78px; margin:2px auto 4px; }
