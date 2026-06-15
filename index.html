@@ -28,17 +28,17 @@
 -->
 <style>
   :root{
-    --bg-1:#5b3df5;
-    --bg-2:#8a2be2;
-    --letters-1:#36d1dc;
-    --letters-2:#1a7fb0;
-    --math-1:#ff8a3d;
-    --math-2:#e0500f;
-    --hero-1:#3a6fe0;
-    --hero-2:#26336a;
+    --bg-1:#2747e6;
+    --bg-2:#0a1568;
+    --letters-1:#2bf0e0;
+    --letters-2:#0aa6dd;
+    --math-1:#ffa42b;
+    --math-2:#ff4b0a;
+    --hero-1:#3a86ff;
+    --hero-2:#172a8c;
     --hero-gold:#ffd23f;
-    --monster-1:#c77dff;
-    --monster-2:#7b2ff7;
+    --monster-1:#ff63d6;
+    --monster-2:#8a25ff;
     --cream:#fff7e8;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -47,16 +47,19 @@
     font-family:'Baloo 2', system-ui, sans-serif;
     color:var(--cream);
     background:
-      radial-gradient(120% 90% at 15% 0%, #ffd23f 0%, transparent 42%),
-      radial-gradient(120% 90% at 100% 100%, #ff5bb0 0%, transparent 45%),
+      radial-gradient(75% 55% at 16% 6%, rgba(255,214,64,.65) 0%, transparent 46%),
+      radial-gradient(70% 55% at 102% 2%, rgba(56,230,255,.7) 0%, transparent 50%),
+      radial-gradient(85% 65% at 100% 100%, rgba(255,91,200,.62) 0%, transparent 52%),
+      radial-gradient(75% 60% at 0% 100%, rgba(91,227,126,.5) 0%, transparent 52%),
       linear-gradient(160deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    background-attachment:fixed;
     overflow-x:hidden;
     -webkit-user-select:none; user-select:none;
     touch-action:manipulation;
   }
   /* floating doodles in the background */
-  .doodle{ position:fixed; font-family:'Luckiest Guy', cursive; opacity:.12; pointer-events:none;
-           color:#fff; z-index:0; animation:drift 9s ease-in-out infinite; }
+  .doodle{ position:fixed; font-family:'Luckiest Guy', cursive; opacity:.2; pointer-events:none;
+           color:#fff; text-shadow:0 0 18px rgba(255,255,255,.5); z-index:0; animation:drift 9s ease-in-out infinite; }
   @keyframes drift{ 0%,100%{ transform:translateY(0) rotate(-6deg);} 50%{ transform:translateY(-22px) rotate(6deg);} }
 
   .wrap{
@@ -75,7 +78,7 @@
   h1{
     font-family:'Luckiest Guy', cursive; font-size:clamp(42px, 11vw, 78px);
     margin:14px 0 4px; line-height:.95;
-    text-shadow:0 5px 0 rgba(0,0,0,.25), 0 0 30px rgba(255,210,63,.5);
+    text-shadow:0 5px 0 rgba(0,0,0,.28), 0 0 26px rgba(56,230,255,.7), 0 0 48px rgba(255,210,63,.55);
   }
   .sub{ font-weight:700; font-size:clamp(15px,4vw,19px); opacity:.92; max-width:520px; text-align:center; }
 
@@ -89,23 +92,30 @@
   .card{
     position:relative; cursor:pointer; text-decoration:none; color:#1c1208;
     border-radius:28px; padding:26px 22px 24px;
-    border:5px solid rgba(255,255,255,.85);
-    box-shadow:0 14px 0 rgba(0,0,0,.22), 0 24px 40px rgba(0,0,0,.32);
+    border:5px solid rgba(255,255,255,.95);
+    box-shadow:0 14px 0 rgba(0,0,0,.22), 0 24px 40px rgba(0,0,0,.32), 0 0 42px var(--glow, transparent);
     transition:transform .12s ease, box-shadow .12s ease;
     overflow:hidden; min-height:230px;
     display:flex; flex-direction:column; align-items:center; justify-content:flex-start; text-align:center;
   }
-  .card:active{ transform:translateY(7px); box-shadow:0 7px 0 rgba(0,0,0,.22), 0 14px 24px rgba(0,0,0,.3); }
-  @media (hover:hover){ .card:hover{ transform:translateY(-6px) rotate(-.5deg); } }
+  .card:active{ transform:translateY(7px); box-shadow:0 7px 0 rgba(0,0,0,.22), 0 14px 24px rgba(0,0,0,.3), 0 0 30px var(--glow, transparent); }
+  @media (hover:hover){ .card:hover{ transform:translateY(-6px) rotate(-.5deg); box-shadow:0 18px 0 rgba(0,0,0,.22), 0 28px 46px rgba(0,0,0,.34), 0 0 60px var(--glow, transparent); } }
 
-  .card.letters{ background:linear-gradient(165deg, var(--letters-1), var(--letters-2)); }
-  .card.math{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); }
-  .card.monster{ background:linear-gradient(165deg, var(--monster-1), var(--monster-2)); }
-  .card::after{ /* shine */
-    content:""; position:absolute; top:-40%; left:-30%; width:60%; height:180%;
-    background:linear-gradient(90deg, transparent, rgba(255,255,255,.35), transparent);
+  .card.letters{ background:linear-gradient(165deg, var(--letters-1), var(--letters-2)); --glow:rgba(43,240,224,.55); }
+  .card.math{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); --glow:rgba(255,120,30,.5); }
+  .card.monster{ background:linear-gradient(165deg, var(--monster-1), var(--monster-2)); --glow:rgba(255,99,214,.55); }
+  /* glossy top sheen, like the app icon */
+  .card::before{
+    content:""; position:absolute; left:0; right:0; top:0; height:55%; border-radius:23px 23px 50% 50%;
+    background:linear-gradient(180deg, rgba(255,255,255,.5) 0%, rgba(255,255,255,.12) 45%, transparent 100%);
+    pointer-events:none; z-index:0;
+  }
+  .card::after{ /* moving shine */
+    content:""; position:absolute; top:-40%; left:-30%; width:60%; height:180%; z-index:0;
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent);
     transform:rotate(20deg);
   }
+  .card > *{ position:relative; z-index:1; }   /* keep icon & text above the gloss */
 
   .icon{ width:118px; height:118px; margin:4px auto 14px; filter:drop-shadow(0 8px 10px rgba(0,0,0,.3)); }
   .card h2{
@@ -121,8 +131,9 @@
 
   /* ---- combined MATH HOOPS card: shared title + two entrances ---- */
   .card.combo{
-    background:linear-gradient(165deg, #3b2f6b, #241a4d);
+    background:linear-gradient(165deg, #4733a8, #1e1566);
     justify-content:flex-start; gap:14px; cursor:default;
+    --glow:rgba(122,80,255,.5);
   }
   .combo-head{ display:flex; flex-direction:column; align-items:center; }
   .combo .icon{ width:78px; height:78px; margin:2px auto 4px; }
@@ -138,12 +149,13 @@
   }
   .entrance:active{ transform:translateY(5px); box-shadow:0 2px 0 rgba(0,0,0,.25); }
   @media (hover:hover){ .entrance:hover{ transform:translateY(-3px); } }
-  .entrance.classic{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); }
+  .entrance.classic{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); box-shadow:0 7px 0 rgba(0,0,0,.25), 0 0 26px rgba(255,120,30,.45); }
   .entrance.hero{
     background:
       radial-gradient(120% 80% at 50% -10%, #8fd6ff 0%, transparent 55%),
       linear-gradient(165deg, var(--hero-1), var(--hero-2));
     border-color:var(--hero-gold);
+    box-shadow:0 7px 0 rgba(0,0,0,.25), 0 0 28px rgba(255,210,63,.5);
   }
   .ent-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
   .ent-name{
