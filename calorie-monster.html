@@ -305,11 +305,12 @@
     -webkit-text-stroke:3px #ffffff; paint-order:stroke fill; letter-spacing:1.5px;
     text-shadow:0 5px 0 rgba(0,0,0,.30), 0 11px 16px rgba(0,0,0,.45);}
   .cartoon .ltr{display:inline-block; animation:ltrpop 2.6s ease-in-out infinite;}
+  .cartoon .word{display:inline-block; white-space:nowrap;}
   .cartoon .ltr:nth-child(2n){animation-delay:.25s} .cartoon .ltr:nth-child(3n){animation-delay:.5s}
   @keyframes ltrpop{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
   .cartoon .c0{color:#5ec8ff} .cartoon .c1{color:#3ddc97} .cartoon .c2{color:#ff5d6c}
   .cartoon .c3{color:#ffd23d} .cartoon .c4{color:#c77dff} .cartoon .c5{color:#ff8be6}
-  #rewards .boardTitle{font-size:clamp(46px,16vw,86px); margin:0;}
+  #rewards .boardTitle{font-size:clamp(30px,10.5vw,52px); margin:0; white-space:nowrap;}
   #rewards .boardSub{font-size:clamp(26px,9vw,48px); margin:0; opacity:1;}
 
   /* ---------- big framed counters: calorie goal + calories (every game) ---------- */
@@ -616,10 +617,15 @@ const Game = (() => {
   // split text into per-letter colored spans for the bubbly cartoon look
   function rainbow(el){
     const txt=el.textContent; el.textContent=''; let ci=0;
-    for(const ch of [...txt]){
-      if(ch===' '){ el.appendChild(document.createTextNode(' ')); continue; }
-      const sp=document.createElement('span'); sp.className='ltr c'+(ci%6); sp.textContent=ch; ci++; el.appendChild(sp);
-    }
+    txt.split(' ').forEach((word,wi)=>{
+      if(wi>0) el.appendChild(document.createTextNode(' '));
+      if(!word) return;
+      const w=document.createElement('span'); w.className='word';   // keep each word on one line
+      for(const ch of [...word]){
+        const sp=document.createElement('span'); sp.className='ltr c'+(ci%6); sp.textContent=ch; ci++; w.appendChild(sp);
+      }
+      el.appendChild(w);
+    });
   }
   function renderBoard(popLast){
     const grid=$('rewardGrid'); grid.innerHTML='';
