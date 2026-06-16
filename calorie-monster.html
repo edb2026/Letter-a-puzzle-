@@ -19,7 +19,8 @@
     --panel:rgba(255,255,255,.12);
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;height:100%;}
+  html,body{margin:0;height:100%; touch-action:manipulation;}
+  .btn,.candy,.home-btn,button{touch-action:manipulation;}
   body{
     font-family:'Trebuchet MS','Comic Sans MS',system-ui,sans-serif;
     background:radial-gradient(120% 90% at 50% 0%, var(--bg3), var(--bg2) 45%, var(--bg1));
@@ -33,7 +34,8 @@
   #app{width:min(440px,100vw); height:100dvh; max-height:900px; position:relative; display:flex; flex-direction:column;}
 
   /* ---------- screens ---------- */
-  .screen{position:absolute; inset:0; display:flex; flex-direction:column; padding:14px; opacity:0; pointer-events:none; transition:opacity .35s;}
+  .screen{position:absolute; inset:0; display:flex; flex-direction:column; padding:14px;
+          padding-bottom:calc(20px + env(safe-area-inset-bottom)); opacity:0; pointer-events:none; transition:opacity .35s;}
   .screen.on{opacity:1; pointer-events:auto;}
 
   /* ---------- title ---------- */
@@ -140,7 +142,7 @@
   @keyframes shine{0%,100%{filter:brightness(1)}50%{filter:brightness(1.4)}}
   .candy.eaten{opacity:0; transform:scale(.3); pointer-events:none; transition:.3s;}
 
-  .actions{display:flex; gap:10px; margin-top:12px;}
+  .actions{display:flex; gap:10px; margin-top:12px; margin-bottom:max(env(safe-area-inset-bottom), 6px);}
   .actions .btn{flex:1; padding:14px; font-size:16px;}
   .btn:disabled{opacity:.45; box-shadow:none; transform:none;}
 
@@ -291,7 +293,7 @@
        box-shadow:0 5px 0 #1c70c4, 0 0 16px rgba(94,200,255,.55) !important;}
 
   /* keep many candies tidy on small screens */
-  .candies{max-height:36vh; overflow-y:auto; align-content:flex-start;}
+  .candies{max-height:30vh; overflow-y:auto; align-content:flex-start;}
 
   /* ---------- win reward image ---------- */
   .winReward{width:min(72%,300px); border-radius:24px; border:4px solid #ffd84a;
@@ -310,14 +312,17 @@
   #rewards .boardTitle{font-size:clamp(46px,16vw,86px); margin:0;}
   #rewards .boardSub{font-size:clamp(26px,9vw,48px); margin:0; opacity:1;}
 
-  /* ---------- big framed calorie counter (shown in every game) ---------- */
-  .calorieBox{display:flex; align-items:center; gap:7px;
-    padding:6px 16px !important; border:4px solid #ffd84a !important; border-radius:18px !important;
-    background:linear-gradient(180deg,#3a2370,#241551) !important;
-    box-shadow:0 0 16px rgba(255,216,74,.55), 0 5px 0 #b98a10, inset 0 2px 6px #0006 !important;}
-  .calorieBox #total{font-size:40px; font-weight:900; color:#ffe07a; text-shadow:0 2px 0 #0008;
-    min-width:1.1em; text-align:center; font-family:'Baloo 2',sans-serif; line-height:1;}
-  .calorieBox .calLbl{font-size:12px; opacity:.85; font-weight:700;}
+  /* ---------- big framed counters: calorie goal + calories (every game) ---------- */
+  .counters{display:flex; gap:10px; justify-content:center; align-items:stretch; margin:4px 0 2px; padding-right:56px;}
+  .calorieBox{flex:1; max-width:190px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:5px 12px; border:4px solid #ffd84a; border-radius:18px;
+    background:linear-gradient(180deg,#3a2370,#241551);
+    box-shadow:0 0 16px rgba(255,216,74,.5), 0 5px 0 #b98a10, inset 0 2px 6px #0006;}
+  .calorieBox .cLabel{font-size:11px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; opacity:.9; line-height:1.1;}
+  .calorieBox .cVal{font-size:34px; font-weight:900; color:#ffe07a; text-shadow:0 2px 0 #0008;
+    line-height:1.05; font-family:'Baloo 2',sans-serif;}
+  .goalBox{border-color:#3ddc97; box-shadow:0 0 16px rgba(61,220,151,.5), 0 5px 0 #15814f, inset 0 2px 6px #0006;}
+  .goalBox .cVal{color:#bfffe0;}
 
   /* ---------- food candies: calories drawn on real foods ---------- */
   .candy{width:66px !important; height:66px !important;}
@@ -374,7 +379,10 @@
   <section class="screen" id="game">
     <div class="hud">
       <div class="badge">Level <span id="lvlNum">1</span> · <span id="lvlName"></span></div>
-      <div class="badge calorieBox">🔥 <span id="total">0</span><span class="calLbl">cal</span></div>
+    </div>
+    <div class="counters">
+      <div class="calorieBox goalBox"><span class="cLabel">🎯 Calorie goal</span><span class="cVal" id="goalVal">0</span></div>
+      <div class="calorieBox"><span class="cLabel">🔥 Calories</span><span class="cVal" id="total">0</span></div>
     </div>
     <div class="goal" id="goal"></div>
 
@@ -637,7 +645,8 @@ const Game = (() => {
     const L=LEVELS[li]; total=0; eaten=[]; busy=false;
     $('lvlNum').textContent=li+1;
     $('lvlName').textContent=L.name;
-    $('goal').innerHTML=L.goal+'<small>'+L.hint+'</small>';
+    $('goalVal').textContent=(L.min===L.max)?(''+L.min):(L.min+'\u2013'+L.max);
+    $('goal').innerHTML='<small>'+L.hint+'</small>';
     $('scaleMax').textContent=L.scaleMax;
     // door / kitten
     const door=$('door');
