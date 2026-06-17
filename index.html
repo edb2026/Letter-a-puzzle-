@@ -233,10 +233,45 @@
   .install-icon-label{ font-weight:700; font-size:13px; opacity:.8; }
   @keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
   @keyframes popIn{ from{ transform:scale(.85); opacity:0; } to{ transform:scale(1); opacity:1; } }
+
+  /* ---- Intro video splash (plays on every open, loops until tapped) ---- */
+  #splash{
+    position:fixed; inset:0; z-index:100; background:#0a0428;
+    display:flex; align-items:center; justify-content:center; overflow:hidden;
+  }
+  #splash.gone{ display:none; }
+  #introVideo{
+    position:absolute; inset:0; width:100%; height:100%;
+    object-fit:cover; background:#0a0428;
+  }
+  .enter-btn{
+    position:absolute; left:50%; transform:translateX(-50%);
+    bottom:calc(36px + env(safe-area-inset-bottom)); z-index:2; cursor:pointer;
+    display:inline-flex; align-items:center; gap:10px;
+    font-family:'Baloo 2', system-ui, sans-serif; font-weight:800; font-size:18px; color:#1c1208;
+    background:#fff7e8; border:3px solid rgba(255,255,255,.95);
+    padding:13px 28px; border-radius:40px;
+    box-shadow:0 7px 0 rgba(0,0,0,.3), 0 0 26px rgba(255,210,63,.55);
+    animation:enterPulse 1.4s ease-in-out infinite;
+  }
+  .enter-btn:active{ transform:translateX(-50%) translateY(4px); box-shadow:0 3px 0 rgba(0,0,0,.3); }
+  .enter-btn .arrow{ font-size:24px; line-height:1; }
+  @keyframes enterPulse{
+    0%,100%{ box-shadow:0 7px 0 rgba(0,0,0,.3), 0 0 22px rgba(255,210,63,.5); }
+    50%{ box-shadow:0 7px 0 rgba(0,0,0,.3), 0 0 40px rgba(255,210,63,.9); }
+  }
 </style>
 <script src="analytics.js"></script>
 </head>
 <body>
+  <!-- Intro video splash: shows every time the site/app opens, loops until "Tap to Play" -->
+  <div id="splash">
+    <video id="introVideo" src="intro.mp4" autoplay muted loop playsinline webkit-playsinline preload="auto"></video>
+    <button class="enter-btn" id="enterBtn" type="button" aria-label="Enter games">
+      Tap to Play <span class="arrow">&rarr;</span>
+    </button>
+  </div>
+
   <div class="doodle" style="top:8%; left:6%; font-size:60px; animation-delay:-1s;">A</div>
   <div class="doodle" style="top:18%; right:8%; font-size:72px; animation-delay:-3s;">7</div>
   <div class="doodle" style="bottom:14%; left:10%; font-size:66px; animation-delay:-5s;">B</div>
@@ -397,6 +432,27 @@
     closeBtn.addEventListener('click', close);
     modal.addEventListener('click', function(e){ if(e.target===modal) close(); });   // tap outside to close
     document.addEventListener('keydown', function(e){ if(e.key==='Escape' && !modal.hidden) close(); });
+  })();
+
+  // ---- Intro video splash (autoplay muted + loop; tap the arrow to enter) ----
+  (function(){
+    var splash=document.getElementById('splash');
+    var vid=document.getElementById('introVideo');
+    var enterBtn=document.getElementById('enterBtn');
+    if(!splash) return;
+    if(vid){
+      vid.muted=true;                 // muted is required for autoplay on phones
+      var tryPlay=function(){ var p=vid.play && vid.play(); if(p && p.catch) p.catch(function(){}); };
+      tryPlay();
+      vid.addEventListener('canplay', tryPlay, { once:true });
+    }
+    function enter(){
+      splash.classList.add('gone');
+      if(vid){ try{ vid.pause(); }catch(e){} }
+      if(window.posthog){ try{ posthog.capture('intro_enter'); }catch(e){} }
+    }
+    if(enterBtn) enterBtn.addEventListener('click', enter);
+    // NOTE: no "already seen" flag is stored, so the intro plays on every open.
   })();
 </script>
 </body>
