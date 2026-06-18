@@ -355,6 +355,9 @@
     <div id="finalNote">You finished every level — math champion! Tap NEXT to play again.</div>
   </div>
 
+  <!-- intro song: plays once each time this page is opened -->
+  <audio id="heroSong" src="super-hero-song.mp4" preload="auto" playsinline></audio>
+
   <div id="startGate">
     <h1>SUPER<br>HERO</h1>
     <div class="sub">Drag the hero numbers into the hoop. Add them up to hit the big GOAL — from 199 all the way to 1000!</div>
@@ -1041,6 +1044,34 @@
     resizeCanvas();
     spawnLevel();
   });
+
+  // ---- intro song: play once on every visit to this page ----
+  (function(){
+    var song = document.getElementById('heroSong');
+    if(!song) return;
+    var started = false;            // guard so it only ever plays once per page load
+    function playOnce(){
+      if(started) return;
+      started = true;
+      try{ song.currentTime = 0; }catch(e){}
+      var p = song.play();
+      if(p && p.catch){
+        // autoplay was blocked — undo the guard so the next real gesture can start it
+        p.catch(function(){ started = false; });
+      }
+    }
+    // try straight away (works when the browser allows autoplay on this origin)
+    playOnce();
+    // fallback: start on the first user interaction (e.g. tapping PLAY)
+    var evs = ['pointerdown','touchstart','keydown','click'];
+    function onGesture(){
+      playOnce();
+      if(started){
+        evs.forEach(function(ev){ document.removeEventListener(ev, onGesture, true); });
+      }
+    }
+    evs.forEach(function(ev){ document.addEventListener(ev, onGesture, true); });
+  })();
 
   // safety: keep canvas sized + show 00:00 and the saved record on load
   resetRunTimer();
