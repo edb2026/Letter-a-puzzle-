@@ -278,6 +278,18 @@
   <!-- Background song for the menu page only; loops while this page is open -->
   <audio id="menuMusic" src="menu-music.mp3" loop preload="auto"></audio>
 
+  <!-- ABC Letters intro video: plays full-screen WITH SOUND on the same tap as
+       PLAY (so phones allow the audio), then opens the game level picker. -->
+  <style>
+    #lettersVideoOverlay{ position:fixed; inset:0; z-index:1000; background:#000; display:none; }
+    #lettersVideoOverlay.show{ display:block; }
+    #lettersVideoOverlay video{ width:100%; height:100%; object-fit:cover; background:#000; }
+  </style>
+  <div id="lettersVideoOverlay">
+    <video id="lettersVideoVid" src="letters-intro.mp4" poster="letters-intro-poster.jpg"
+           playsinline webkit-playsinline preload="auto"></video>
+  </div>
+
   <div class="doodle" style="top:8%; left:6%; font-size:60px; animation-delay:-1s;">A</div>
   <div class="doodle" style="top:18%; right:8%; font-size:72px; animation-delay:-3s;">7</div>
   <div class="doodle" style="bottom:14%; left:10%; font-size:66px; animation-delay:-5s;">B</div>
@@ -418,11 +430,34 @@
   var rm=document.getElementById('recMath');  if(rm) rm.textContent=fmtTime(readBest('mathHoopsBestMs_v1'));
   var rh=document.getElementById('recHero');  if(rh) rh.textContent=fmtTime(readBest('superHeroBestMs_v1'));
 
+  // ---- ABC Letters: play the intro video on THIS tap (sound allowed because it
+  //      is the user gesture), then jump into the game's level picker ----
+  function playLettersIntroThenGo(){
+    var ov=document.getElementById('lettersVideoOverlay');
+    var v=ov && ov.querySelector('video');
+    if(!ov||!v){ window.location.href='letters.html#levels'; return; }
+    var done=false;
+    function go(){ if(done) return; done=true; window.location.href='letters.html#levels'; }
+    // stop the menu music so it doesn't play over the video
+    try{ var m=document.getElementById('menuMusic'); if(m) m.pause(); }catch(e){}
+    v.addEventListener('ended', go, {once:true});
+    v.addEventListener('error', go, {once:true});
+    ov.addEventListener('click', go);                 // tap the video to skip it
+    ov.classList.add('show');
+    try{
+      v.muted=false; v.volume=1; v.currentTime=0;
+      var p=v.play();
+      if(p && p.catch) p.catch(function(){ go(); }); // if it cannot play, just open the game
+    }catch(e){ go(); }
+  }
+
   // ---- navigate on tap (big touch targets for phone & iPad) ----
   document.querySelectorAll('[data-href]').forEach(function(el){
     el.addEventListener('click', function(){
       var href=el.getAttribute('data-href');
-      if(href) window.location.href=href;
+      if(!href) return;
+      if(href==='letters.html'){ playLettersIntroThenGo(); return; }
+      window.location.href=href;
     });
   });
 

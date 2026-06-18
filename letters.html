@@ -570,27 +570,14 @@
     if(!inviteHeard) speakInvite(); }
   document.addEventListener('pointerdown', unlockAudio, {once:true});
 
-  // Play the intro video once when arriving from the main menu, then show the
-  // static level picker. Returning here from inside the game calls showLevel()
-  // directly (see the Levels button / win flow), so the video does NOT replay.
+  // The intro video now plays on the menu (index.html) the instant PLAY is tapped,
+  // then it sends us straight here to the level picker. So this page no longer
+  // shows the old poster + play circle — it always opens on the level picker.
   function startIntro(){
-    var ov=document.getElementById('letterIntro'), v=document.getElementById('letterIntroVid'),
-        btn=document.getElementById('introPlay');
-    if(!ov||!v){ showLevel(); return; }
-    var done=false;
-    function finish(){ if(done) return; done=true; try{ v.pause(); }catch(_){} ov.classList.add('gone'); showLevel(); }
-    v.addEventListener('ended', finish, {once:true});
-    v.addEventListener('error', finish, {once:true});
-    // Start the video WITH sound. On phones this must come from a real tap, so the
-    // poster + play button is shown and the tap starts it (guaranteed audio).
-    function play(){ ov.classList.add('playing'); try{ v.muted=false; v.volume=1;
-      var pr=v.play(); if(pr && pr.catch) pr.catch(function(){ finish(); }); }catch(_){ finish(); } }
-    if(btn) btn.addEventListener('click', play);
-    ov.addEventListener('click', play);
-    // Desktop / browsers that allow it: auto-start with sound; otherwise wait for the tap.
-    v.muted=false; v.volume=1;
-    var p=v.play();
-    if(p && p.then){ p.then(function(){ ov.classList.add('playing'); }).catch(function(){ /* show poster + play button, wait for tap */ }); }
+    var ov=document.getElementById('letterIntro');
+    if(location.hash === '#levels'){ try{ history.replaceState(null,'',location.pathname); }catch(_){} }
+    if(ov) ov.classList.add('gone');
+    showLevel();
   }
   startIntro();
 })();
