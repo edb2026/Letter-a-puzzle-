@@ -567,13 +567,21 @@
     var ov=document.getElementById('letterIntro'), v=document.getElementById('letterIntroVid');
     if(!ov||!v){ showLevel(); return; }
     var done=false;
-    function finish(){ if(done) return; done=true; try{ v.pause(); }catch(_){} ov.classList.add('gone'); showLevel(); }
+    var tapEvents=['pointerdown','touchstart','click'];
+    function cleanup(){ tapEvents.forEach(function(ev){ document.removeEventListener(ev,onTap,true); }); }
+    function finish(){ if(done) return; done=true; try{ v.pause(); }catch(_){} cleanup(); ov.classList.add('gone'); showLevel(); }
+    // Browsers block sound until the user touches the page, so unmute on the first touch.
+    function onTap(){ try{ v.muted=false; v.volume=1; if(v.paused) v.play(); }catch(_){} }
+    tapEvents.forEach(function(ev){ document.addEventListener(ev,onTap,true); });
     v.addEventListener('ended', finish, {once:true});
     v.addEventListener('error', finish, {once:true});
-    // try to play with sound; if the browser blocks it, fall back to muted so it still plays once
-    v.muted=false;
+    // Try to play WITH sound first (works on desktop / when the browser allows it)…
+    v.muted=false; v.volume=1;
     var p=v.play();
-    if(p && p.catch){ p.catch(function(){ v.muted=true; var p2=v.play(); if(p2&&p2.catch) p2.catch(function(){ finish(); }); }); }
+    if(p && p.catch){ p.catch(function(){
+      // …otherwise start muted so it still plays once, and the first touch turns the sound on.
+      v.muted=true; var p2=v.play(); if(p2&&p2.catch) p2.catch(function(){ finish(); });
+    }); }
     // safety net: never get stuck on the video
     setTimeout(finish, 9000);
   }
