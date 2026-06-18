@@ -260,6 +260,9 @@
     <button class="enter-hotspot" id="enterBtn" type="button" aria-label="Enter games"></button>
   </div>
 
+  <!-- Background song for the menu page only; loops while this page is open -->
+  <audio id="menuMusic" src="menu-music.mp3" loop preload="auto"></audio>
+
   <div class="doodle" style="top:8%; left:6%; font-size:60px; animation-delay:-1s;">A</div>
   <div class="doodle" style="top:18%; right:8%; font-size:72px; animation-delay:-3s;">7</div>
   <div class="doodle" style="bottom:14%; left:10%; font-size:66px; animation-delay:-5s;">B</div>
@@ -437,6 +440,9 @@
     function enter(){
       splash.classList.add('gone');
       if(vid){ try{ vid.pause(); }catch(e){} }
+      // start the looping menu song (this tap is the user gesture that unlocks sound)
+      var music=document.getElementById('menuMusic');
+      if(music){ try{ music.volume=0.6; var mp=music.play(); if(mp && mp.catch) mp.catch(function(){}); }catch(e){} }
       if(window.posthog){ try{ posthog.capture('intro_enter'); }catch(e){} }
     }
     if(enterBtn) enterBtn.addEventListener('click', enter);
