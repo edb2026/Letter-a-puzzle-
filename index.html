@@ -108,6 +108,21 @@
   .card:active{ transform:translateY(7px); box-shadow:0 7px 0 rgba(0,0,0,.22), 0 14px 24px rgba(0,0,0,.3), 0 0 30px var(--glow, transparent); }
   @media (hover:hover){ .card:hover{ transform:translateY(-6px) rotate(-.5deg); box-shadow:0 18px 0 rgba(0,0,0,.22), 0 28px 46px rgba(0,0,0,.34), 0 0 60px var(--glow, transparent); } }
 
+  /* gentle floating + slight dancing of the game cards.
+     Uses the individual translate/rotate properties so it composes with the
+     transform-based hover/active states above (no conflict). */
+  @keyframes floatCard{
+    0%   { translate:0 0;    rotate:-1deg;   }
+    25%  { translate:0 -8px; rotate:1.1deg;  }
+    50%  { translate:0 -2px; rotate:-0.6deg; }
+    75%  { translate:0 -6px; rotate:1.4deg;  }
+    100% { translate:0 0;    rotate:-1deg;   }
+  }
+  .card{ animation:floatCard 4.4s ease-in-out infinite; }
+  .card.letters{ animation-delay:-.4s;  animation-duration:4.4s; }
+  .card.math{    animation-delay:-1.6s; animation-duration:5s;   }
+  .card.monster{ animation-delay:-2.4s; animation-duration:3.9s; }
+
   .card.letters{ background:linear-gradient(165deg, var(--letters-1), var(--letters-2)); --glow:rgba(0,232,223,.65); }
   .card.math{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); --glow:rgba(255,80,0,.6); }
   .card.monster{ background:linear-gradient(165deg, var(--monster-1), var(--monster-2)); --glow:rgba(255,54,207,.65); }
