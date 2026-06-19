@@ -591,6 +591,12 @@
     }); }
   }
   startIntro();
+
+  // safety: mobile browsers auto-suspend the AudioContext after idle time, which
+  // silences the snap sound when a piece drops into the silhouette. Re-resume it
+  // on every interaction so the "click" always plays.
+  ['pointerdown','touchstart','click'].forEach(ev=>
+    document.addEventListener(ev, ()=>{ try{ audio(); }catch(e){} }, true));
 })();
 </script>
 </body>
