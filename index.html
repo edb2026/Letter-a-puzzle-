@@ -140,6 +140,7 @@
   .card > *{ position:relative; z-index:1; }   /* keep icon & text above the gloss */
 
   .icon{ width:118px; height:118px; margin:4px auto 14px; filter:drop-shadow(0 8px 10px rgba(0,0,0,.3)); }
+  .letters-pic{ display:block; width:auto; height:168px; margin:2px auto 12px; border-radius:16px; box-shadow:0 8px 16px rgba(0,0,0,.32); }
   .card h2{
     font-family:'Luckiest Guy', cursive; color:#fff; font-size:30px; margin:0 0 6px;
     text-shadow:0 3px 0 rgba(0,0,0,.28); letter-spacing:.5px;
@@ -293,14 +294,7 @@
     <div class="cards">
       <!-- LETTERS PUZZLE — change data-href if your file has another name -->
       <a class="card letters" data-href="letters.html">
-        <svg class="icon" viewBox="0 0 120 120" aria-hidden="true">
-          <rect x="10" y="42" width="46" height="46" rx="9" fill="#ffd23f" stroke="#1c1208" stroke-width="4"/>
-          <text x="33" y="76" font-family="Luckiest Guy, cursive" font-size="34" fill="#1c1208" text-anchor="middle">A</text>
-          <rect x="58" y="22" width="46" height="46" rx="9" fill="#ff5bb0" stroke="#1c1208" stroke-width="4" transform="rotate(8 81 45)"/>
-          <text x="81" y="56" font-family="Luckiest Guy, cursive" font-size="34" fill="#fff" text-anchor="middle" transform="rotate(8 81 45)">B</text>
-          <rect x="48" y="62" width="46" height="46" rx="9" fill="#5be37e" stroke="#1c1208" stroke-width="4" transform="rotate(-7 71 85)"/>
-          <text x="71" y="96" font-family="Luckiest Guy, cursive" font-size="34" fill="#1c1208" text-anchor="middle" transform="rotate(-7 71 85)">C</text>
-        </svg>
+        <img class="letters-pic" src="icons/abc-letters.jpg" alt="" aria-hidden="true">
         <h2>ABC LETTERS</h2>
         <p>Build words &amp; spell with letters</p>
         <span class="play">PLAY</span>
