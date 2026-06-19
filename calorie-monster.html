@@ -576,12 +576,15 @@ const Game = (() => {
       const go=()=>{ try{
         const s=ctx.createBufferSource();
         s.buffer=buffers[key]; s.connect(ctx.destination); s.start(0);
-      }catch(e){} };
-      if(buffers[key]) { go(); }
-      else {            // not decoded yet: decode then play
-        try{ ctx.decodeAudioData(b64ToBuf(AUDIO[key]), buf=>{ buffers[key]=buf; go(); }, ()=>{}); }catch(e){}
-      }
-      return;          // clip exists -> never use the robot voice
+      }catch(e){ if(fallbackText) speak(fallbackText,opts); } };
+      if(buffers[key]) { go(); return; }
+      // not decoded yet: decode then play; if decoding fails, use the spoken voice
+      try{
+        ctx.decodeAudioData(b64ToBuf(AUDIO[key]),
+          buf=>{ buffers[key]=buf; go(); },
+          ()=>{ if(fallbackText) speak(fallbackText,opts); });
+        return;
+      }catch(e){ /* fall through to spoken voice below */ }
     }
     speak(fallbackText,opts);
   }
@@ -591,6 +594,7 @@ const Game = (() => {
     if(!sound) return;
     try{
       actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+      if(actx.state==='suspended'){ try{ actx.resume(); }catch(e){} }
       const o=actx.createOscillator(), g=actx.createGain();
       o.type=type; o.frequency.value=freq;
       if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, actx.currentTime+dur);
@@ -683,7 +687,12 @@ const Game = (() => {
     workoutCount=0; $('resetBtn').textContent='🏋️ Work out';
     update();
     clearTimeout(speakTimer);
-    speakTimer=setTimeout(()=>playLine(li===0?'introL1':'introL23', ''), 0);
+    // Recorded human voice line for the level; if the clip can't play, the
+    // browser voice speaks this text so the level is never silent.
+    const introText = li===0
+      ? 'Feed the monster the right calories!'
+      : 'Next level! Feed the monster the right calories.';
+    speakTimer=setTimeout(()=>playLine(li===0?'introL1':'introL23', introText), 0);
   }
 
   function feed(i,v,el){

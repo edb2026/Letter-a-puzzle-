@@ -918,6 +918,12 @@
     spawnLevel();
   });
 
+  // safety: mobile browsers auto-suspend the AudioContext after idle time, which
+  // silences the ball sounds. Re-resume it on every interaction so the swish /
+  // clang always play.
+  ['pointerdown','touchstart','click'].forEach(ev=>
+    document.addEventListener(ev, ()=>{ try{ audio(); }catch(e){} }, true));
+
   // safety: keep canvas sized + show 00:00 and the saved record on load
   resetRunTimer();
   updateRecordUI();
