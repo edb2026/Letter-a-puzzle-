@@ -107,15 +107,6 @@
                 display:flex; align-items:center; justify-content:center; }
   #letterIntro.gone{ display:none; }
   #letterIntroVid{ width:100%; height:100%; object-fit:cover; background:#000; }
-  #letterIntro .playbtn{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-    width:104px; height:104px; border-radius:50%; border:0; cursor:pointer; z-index:2;
-    background:rgba(255,255,255,.92); box-shadow:0 8px 26px rgba(0,0,0,.55);
-    display:flex; align-items:center; justify-content:center;
-    animation:introPulse 1.3s ease-in-out infinite; -webkit-tap-highlight-color:transparent; }
-  #letterIntro .playbtn::before{ content:''; margin-left:8px; border-style:solid;
-    border-width:20px 0 20px 34px; border-color:transparent transparent transparent #6a2fb0; }
-  #letterIntro.playing .playbtn{ display:none; }
-  @keyframes introPulse{ 0%,100%{ transform:translate(-50%,-50%) scale(1); } 50%{ transform:translate(-50%,-50%) scale(1.08); } }
 
   /* ---- level select screen ---- */
   #level{
@@ -181,7 +172,6 @@
 
   <div id="letterIntro">
     <video id="letterIntroVid" src="letters-intro.mp4" poster="letters-intro-poster.jpg" playsinline webkit-playsinline preload="auto"></video>
-    <button class="playbtn" id="introPlay" type="button" aria-label="Play"></button>
   </div>
 
   <div id="level">
@@ -574,23 +564,31 @@
   // static level picker. Returning here from inside the game calls showLevel()
   // directly (see the Levels button / win flow), so the video does NOT replay.
   function startIntro(){
-    var ov=document.getElementById('letterIntro'), v=document.getElementById('letterIntroVid'),
-        btn=document.getElementById('introPlay');
+    var ov=document.getElementById('letterIntro'), v=document.getElementById('letterIntroVid');
     if(!ov||!v){ showLevel(); return; }
-    var done=false;
-    function finish(){ if(done) return; done=true; try{ v.pause(); }catch(_){} ov.classList.add('gone'); showLevel(); }
-    v.addEventListener('ended', finish, {once:true});
+    var done=false, soundOn=false, holdTimer=0;
+    function finish(){ if(done) return; done=true; clearTimeout(holdTimer); cleanup(); try{ v.pause(); }catch(_){} ov.classList.add('gone'); showLevel(); }
+    var tapEvents=['pointerdown','touchstart','click'];
+    function cleanup(){ tapEvents.forEach(function(ev){ document.removeEventListener(ev,onTap,true); }); }
+    // First touch turns the sound on and plays the video once from the start with audio.
+    function onTap(){ if(soundOn) return; soundOn=true; clearTimeout(holdTimer);
+      try{ v.muted=false; v.volume=1; v.currentTime=0; var pr=v.play(); if(pr&&pr.catch) pr.catch(function(){}); }catch(_){}
+    }
+    tapEvents.forEach(function(ev){ document.addEventListener(ev,onTap,true); });
+    v.loop=false;
     v.addEventListener('error', finish, {once:true});
-    // Start the video WITH sound. On phones this must come from a real tap, so the
-    // poster + play button is shown and the tap starts it (guaranteed audio).
-    function play(){ ov.classList.add('playing'); try{ v.muted=false; v.volume=1;
-      var pr=v.play(); if(pr && pr.catch) pr.catch(function(){ finish(); }); }catch(_){ finish(); } }
-    if(btn) btn.addEventListener('click', play);
-    ov.addEventListener('click', play);
-    // Desktop / browsers that allow it: auto-start with sound; otherwise wait for the tap.
+    v.addEventListener('ended', function(){
+      // If it played with sound (or sound isn't muted), we're done.
+      if(soundOn || !v.muted){ finish(); return; }
+      // Finished its muted auto-run with no touch yet: hold briefly so a touch can play it with sound.
+      holdTimer=setTimeout(finish, 4000);
+    });
+    // Auto-start: try WITH sound (works on desktop); if blocked, auto-start muted.
     v.muted=false; v.volume=1;
     var p=v.play();
-    if(p && p.then){ p.then(function(){ ov.classList.add('playing'); }).catch(function(){ /* show poster + play button, wait for tap */ }); }
+    if(p && p.then){ p.then(function(){ soundOn=true; }).catch(function(){
+      v.muted=true; var p2=v.play(); if(p2&&p2.catch) p2.catch(function(){ finish(); });
+    }); }
   }
   startIntro();
 })();
