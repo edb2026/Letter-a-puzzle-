@@ -855,8 +855,17 @@ const Game = (() => {
 
   function toggleSound(){ sound=!sound; $('sndBtn').textContent= sound?'🔊 Sound: on':'🔇 Sound: off'; if(sound){ sfx.ping(); } else if('speechSynthesis' in window){ try{speechSynthesis.cancel();}catch(e){} } }
 
-  // Safety net: unlock audio on the very first interaction anywhere.
-  function firstTouch(){ primeSpeech(); unlockAudio(); document.removeEventListener('pointerdown',firstTouch); document.removeEventListener('touchstart',firstTouch); document.removeEventListener('click',firstTouch); }
+  // Safety net: unlock audio on the very first interaction anywhere. On iPhone the
+  // hardware ring/silent switch mutes Web Audio, so we also play a silent looping
+  // clip through an <audio> element, which routes Web Audio to the media channel so
+  // the beeps and voice are heard even when the phone is on silent.
+  function iosUnmute(){
+    try{
+      var SILENT="data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+      var a=new Audio(SILENT); a.loop=true; var p=a.play(); if(p&&p.catch)p.catch(function(){});
+    }catch(e){}
+  }
+  function firstTouch(){ primeSpeech(); unlockAudio(); iosUnmute(); document.removeEventListener('pointerdown',firstTouch); document.removeEventListener('touchstart',firstTouch); document.removeEventListener('click',firstTouch); }
   document.addEventListener('pointerdown',firstTouch,{once:false});
   document.addEventListener('touchstart',firstTouch,{once:false});
   document.addEventListener('click',firstTouch,{once:false});

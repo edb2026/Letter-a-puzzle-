@@ -592,11 +592,23 @@
   }
   startIntro();
 
-  // safety: mobile browsers auto-suspend the AudioContext after idle time, which
-  // silences the snap sound when a piece drops into the silhouette. Re-resume it
-  // on every interaction so the "click" always plays.
-  ['pointerdown','touchstart','click'].forEach(ev=>
-    document.addEventListener(ev, ()=>{ try{ audio(); }catch(e){} }, true));
+  // Keep game sound working on phones:
+  //  • mobile browsers auto-suspend the AudioContext after idle time, so we
+  //    re-resume it on every interaction (otherwise the snap "click" goes silent);
+  //  • on iPhone the hardware ring/silent switch mutes Web Audio, so on the first
+  //    touch we play a silent looping clip through an <audio> element, which routes
+  //    Web Audio to the media channel and lets the snap sound be heard even on silent.
+  (function(){
+    var SILENT="data:audio/wav;base64,UklGRkQDAABXQVZFZm10IBAAAAABAAEAQB8AAIA+AAACABAAZGF0YSADAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==";
+    var unmuted=false;
+    function onGesture(){
+      try{ audio(); }catch(e){}
+      if(!unmuted){ unmuted=true;
+        try{ var a=new Audio(SILENT); a.loop=true; var p=a.play(); if(p&&p.catch)p.catch(function(){}); }catch(e){}
+      }
+    }
+    ['pointerdown','touchstart','click'].forEach(function(ev){ document.addEventListener(ev,onGesture,true); });
+  })();
 })();
 </script>
 </body>
