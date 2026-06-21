@@ -39,6 +39,8 @@
     --hero-gold:#ffd23f;
     --monster-1:#ff36cf;
     --monster-2:#9b14ff;
+    --castle-1:#ffb23f;
+    --castle-2:#1f3c78;
     --cream:#fff7e8;
   }
   *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -94,6 +96,7 @@
     .cards{ grid-template-columns:1fr 1fr; gap:24px; }
     /* center the odd third card so the two rows look balanced on iPad / desktop */
     .card.monster{ grid-column:1 / -1; justify-self:center; width:calc(50% - 12px); }
+    .card.castle{ grid-column:1 / -1; justify-self:center; width:calc(50% - 12px); }
   }
 
   .card{
@@ -122,10 +125,12 @@
   .card.letters{ animation-delay:-.4s;  animation-duration:4.4s; }
   .card.math{    animation-delay:-1.6s; animation-duration:5s;   }
   .card.monster{ animation-delay:-2.4s; animation-duration:3.9s; }
+  .card.castle{ animation-delay:-3.2s; animation-duration:4.2s; }
 
   .card.letters{ background:linear-gradient(165deg, var(--letters-1), var(--letters-2)); --glow:rgba(0,232,223,.65); }
   .card.math{ background:linear-gradient(165deg, var(--math-1), var(--math-2)); --glow:rgba(255,80,0,.6); }
   .card.monster{ background:linear-gradient(165deg, var(--monster-1), var(--monster-2)); --glow:rgba(255,54,207,.65); }
+  .card.castle{ background:linear-gradient(165deg, var(--castle-1), var(--castle-2)); --glow:rgba(255,178,63,.6); }
   /* glossy top sheen, like the app icon */
   .card::before{
     content:""; position:absolute; left:0; right:0; top:0; height:55%; border-radius:23px 23px 50% 50%;
@@ -266,6 +271,28 @@
     background:transparent; border:0; padding:0; cursor:pointer;
     -webkit-tap-highlight-color:transparent;
   }
+
+  /* ---- Castle puzzle game: fullscreen video overlay (Play -> video -> game) ---- */
+  .castle-video-overlay{
+    position:fixed; inset:0; z-index:120; background:#000;
+    display:none; align-items:center; justify-content:center;
+  }
+  .castle-video-overlay.show{ display:flex; }
+  .castle-video-overlay video{
+    width:100%; height:100%; object-fit:contain; background:#000;
+  }
+  .castle-skip-btn{
+    position:absolute; top:18px; right:18px; z-index:121;
+    background:rgba(0,0,0,.55); color:#fff; border:1px solid rgba(255,255,255,.5);
+    border-radius:999px; padding:8px 18px; font-family:'Baloo 2', system-ui, sans-serif;
+    font-weight:700; font-size:13px; letter-spacing:.5px; cursor:pointer;
+  }
+  .castle-skip-btn:active{ transform:scale(.96); }
+  .castle-fade-black{
+    position:fixed; inset:0; z-index:130; background:#000; opacity:0;
+    pointer-events:none; transition:opacity .5s ease;
+  }
+  .castle-fade-black.show{ opacity:1; }
 </style>
 <script src="analytics.js"></script>
 </head>
@@ -350,10 +377,27 @@
         <p>Feed the monster &amp; rescue the kitten</p>
         <span class="play">PLAY</span>
       </a>
+
+      <!-- BUILD THE FORTRESS — castle jigsaw puzzle. Tap PLAY: plays the intro video (with sound),
+           then opens the puzzle game. Change NEXT_PAGE in the script below if your puzzle file
+           has a different name. -->
+      <div class="card castle" id="castleCard">
+        <img class="letters-pic" src="icons/castle-fortress.jpg" alt="Build the Fortress puzzle game">
+        <h2>BUILD THE FORTRESS</h2>
+        <p>Assemble castle puzzles &amp; boost your memory</p>
+        <span class="play">PLAY</span>
+      </div>
     </div>
 
     <footer>Made for curious kids · choose a game above<br><a href="privacy.html">Privacy Policy</a></footer>
   </div>
+
+  <!-- Castle puzzle game: fullscreen video overlay, shown after tapping the "Build the Fortress" card -->
+  <div class="castle-video-overlay" id="castleVideoOverlay">
+    <button class="castle-skip-btn" id="castleSkipBtn" type="button">Skip ➜</button>
+    <video id="castleIntroVideo" src="castle-intro.mp4" playsinline></video>
+  </div>
+  <div class="castle-fade-black" id="castleFadeBlack"></div>
 
   <!-- Install help modal -->
   <div class="modal-overlay" id="installModal" hidden>
@@ -456,6 +500,40 @@
     }
     if(enterBtn) enterBtn.addEventListener('click', enter);
     // NOTE: no "already seen" flag is stored, so the intro plays on every open.
+  })();
+  // ---- Castle puzzle game: tap card -> play intro video with sound -> open the puzzle game ----
+  (function(){
+    var card = document.getElementById('castleCard');
+    var overlay = document.getElementById('castleVideoOverlay');
+    var video = document.getElementById('castleIntroVideo');
+    var skipBtn = document.getElementById('castleSkipBtn');
+    var fade = document.getElementById('castleFadeBlack');
+    if(!card || !overlay || !video) return;
+
+    // Change this if your castle puzzle game file has a different name:
+    var NEXT_PAGE = 'knight_puzzle_game_en.html';
+
+    function goToGame(){
+      fade.classList.add('show');
+      setTimeout(function(){ window.location.href = NEXT_PAGE; }, 480);
+    }
+    function startVideo(){
+      overlay.classList.add('show');
+      video.muted = false;
+      video.volume = 1.0;
+      video.currentTime = 0;
+      var p = video.play();
+      if(p && p.catch){
+        p.catch(function(){
+          // if sound-on autoplay is blocked, fall back to muted so it still plays
+          video.muted = true;
+          video.play();
+        });
+      }
+    }
+    card.addEventListener('click', startVideo);
+    video.addEventListener('ended', goToGame);
+    skipBtn.addEventListener('click', goToGame);
   })();
 </script>
 </body>
