@@ -67,6 +67,46 @@ html,body{
 .quest-banner::before{left:14px;}
 .quest-banner::after{right:14px;}
 
+.home-btn{
+  position:fixed;
+  top:14px; left:14px;
+  z-index:50;
+  width:46px;height:46px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 25%, #fffbe9, #d9c79a 70%);
+  border:2px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;
+  text-decoration:none;
+  box-shadow:0 3px 8px rgba(0,0,0,.4);
+  transition:transform .15s ease;
+}
+.home-btn:hover{ transform:scale(1.08); }
+.home-btn:active{ transform:scale(.94); }
+
+.music-btn{
+  position:fixed;
+  top:14px; right:14px;
+  z-index:50;
+  width:46px;height:46px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 25%, #fffbe9, #d9c79a 70%);
+  border:2px solid var(--gold);
+  display:flex;align-items:center;justify-content:center;
+  font-size:20px;
+  cursor:pointer;
+  box-shadow:0 3px 8px rgba(0,0,0,.4);
+  transition:transform .15s ease;
+}
+.music-btn:hover{ transform:scale(1.08); }
+.music-btn:active{ transform:scale(.94); }
+
+@media (max-width:560px){
+  .home-btn, .music-btn{ width:40px; height:40px; font-size:18px; top:10px; }
+  .home-btn{ left:10px; }
+  .music-btn{ right:10px; }
+}
+
 .title-row{
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;
 }
@@ -395,6 +435,8 @@ html,body{
 </head>
 <body>
 <div class="sky-stars"></div>
+<a class="home-btn" id="homeBtn" href="index.html" title="Back to Home">🏠</a>
+<button class="music-btn" id="musicBtn" title="Music on/off">🔊</button>
 <div id="app">
 
   <div class="quest-banner">
@@ -507,6 +549,8 @@ function startLevel(idx){
   currentLevel = LEVELS[idx];
   totalPieces = currentLevel.pieces;
   placedCount = 0;
+  filledCount = 0;
+  correctCount = 0;
   levelDone = false;
   advancedAlready = false;
 
@@ -595,9 +639,12 @@ function shuffleArray(arr){
   }
 }
 
+let filledCount = 0;
+let correctCount = 0;
+
 function updateProgress(){
-  document.getElementById('progressFill').style.width = (placedCount/totalPieces*100)+'%';
-  document.getElementById('progressText').textContent = `Placed: ${placedCount} / ${totalPieces}`;
+  document.getElementById('progressFill').style.width = (correctCount/totalPieces*100)+'%';
+  document.getElementById('progressText').textContent = `Placed correctly: ${correctCount} / ${totalPieces}`;
 }
 
 /* ---------- DRAG LOGIC (pointer events, mouse+touch) ---------- */
@@ -650,6 +697,7 @@ function placePieceInCell(piece, idx){
   piece.dataset.cell = String(idx);
   piece.classList.add('placed');
   cellOccupants[idx] = piece;
+  playSnapSound();
 }
 
 function returnPieceToTray(piece){
@@ -710,18 +758,28 @@ function onPointerUp(e){
 }
 
 function updateFilledProgress(){
-  placedCount = cellOccupants.filter(p => p !== null).length;
+  filledCount = cellOccupants.filter(p => p !== null).length;
+  correctCount = 0;
+  for(let idx=0; idx<cellOccupants.length; idx++){
+    const p = cellOccupants[idx];
+    if(!p) continue;
+    const r = Math.floor(idx/curCols), c = idx % curCols;
+    if(parseInt(p.dataset.r) === r && parseInt(p.dataset.c) === c){
+      correctCount++;
+    }
+  }
+  placedCount = filledCount; // kept for backward compatibility with other checks
   updateProgress();
 }
 
 function checkWin(){
   if(levelDone) return;
-  if(placedCount < totalPieces) return;
+  if(filledCount < totalPieces) return;
 
   const wrongPieces = [];
   for(let idx=0; idx<cellOccupants.length; idx++){
     const p = cellOccupants[idx];
-    if(!p) return; // shouldn't happen if placedCount === totalPieces, but stay safe
+    if(!p) return; // shouldn't happen if filledCount === totalPieces, but stay safe
     const r = Math.floor(idx/curCols), c = idx % curCols;
     if(parseInt(p.dataset.r) !== r || parseInt(p.dataset.c) !== c){
       wrongPieces.push(p);
@@ -932,6 +990,129 @@ document.getElementById('hintOverlay').addEventListener('click', (e)=>{
     document.getElementById('hintOverlay').classList.remove('show');
   }
 });
+
+/* ---------- AUDIO ENGINE (Web Audio API, no external sound files needed) ---------- */
+let audioCtx = null;
+let musicEnabled = true;
+let musicStarted = false;
+let musicTimer = null;
+
+function getAudioCtx(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch(e){ audioCtx = null; }
+  }
+  return audioCtx;
+}
+
+/* A soft "paper rustle" burst -- short filtered noise, used when a puzzle
+   piece snaps into place. No external audio file needed. */
+function playSnapSound(){
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  const now = ctx.currentTime;
+  const dur = 0.18;
+
+  const bufferSize = Math.floor(ctx.sampleRate * dur);
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++){
+    // white noise, fading out, shaped a bit for a "paper" feel
+    const fade = 1 - (i/bufferSize);
+    data[i] = (Math.random()*2 - 1) * fade * fade;
+  }
+
+  const noise = ctx.createBufferSource();
+  noise.buffer = buffer;
+
+  const bandpass = ctx.createBiquadFilter();
+  bandpass.type = 'bandpass';
+  bandpass.frequency.value = 2200;
+  bandpass.Q.value = 0.7;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.35, now);
+  gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+
+  noise.connect(bandpass);
+  bandpass.connect(gain);
+  gain.connect(ctx.destination);
+
+  noise.start(now);
+  noise.stop(now + dur);
+}
+
+/* Calm, slow, repeating ambient music meant to mirror a relaxed thinking
+   rhythm -- a gentle pentatonic arpeggio, soft sine tones, very low volume.
+   Fully generated, no audio file needed. */
+const MUSIC_NOTES = [261.63, 293.66, 329.63, 392.00, 440.00, 392.00, 329.63, 293.66]; // C D E G A G E D (pentatonic-ish)
+let musicStepIndex = 0;
+
+function playMusicNote(freq, when, length){
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  const osc = ctx.createOscillator();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0, when);
+  gain.gain.linearRampToValueAtTime(0.05, when + 0.15);
+  gain.gain.linearRampToValueAtTime(0.0, when + length);
+
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(when);
+  osc.stop(when + length + 0.05);
+}
+
+function scheduleMusicStep(){
+  if(!musicEnabled) return;
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  const now = ctx.currentTime;
+  const freq = MUSIC_NOTES[musicStepIndex % MUSIC_NOTES.length];
+  playMusicNote(freq, now + 0.02, 1.6);
+  musicStepIndex++;
+  // slow, steady tempo -- like a calm, thinking rhythm (~1 note every 1.4s)
+  musicTimer = setTimeout(scheduleMusicStep, 1400);
+}
+
+function startMusic(){
+  if(musicStarted) return;
+  const ctx = getAudioCtx();
+  if(!ctx) return;
+  if(ctx.state === 'suspended'){ ctx.resume(); }
+  musicStarted = true;
+  scheduleMusicStep();
+}
+
+function stopMusic(){
+  clearTimeout(musicTimer);
+  musicStarted = false;
+}
+
+function toggleMusic(){
+  musicEnabled = !musicEnabled;
+  const btn = document.getElementById('musicBtn');
+  if(musicEnabled){
+    if(btn) btn.textContent = '🔊';
+    startMusic();
+  } else {
+    if(btn) btn.textContent = '🔈';
+    stopMusic();
+  }
+}
+
+document.getElementById('musicBtn').addEventListener('click', toggleMusic);
+
+// Background music needs a user gesture to start in most browsers --
+// begin on the very first tap/click/drag anywhere on the page.
+function firstInteractionStartMusic(){
+  if(musicEnabled){ startMusic(); }
+  window.removeEventListener('pointerdown', firstInteractionStartMusic);
+}
+window.addEventListener('pointerdown', firstInteractionStartMusic);
 
 /* ---------- INIT ---------- */
 function init(){
