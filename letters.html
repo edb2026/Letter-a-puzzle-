@@ -590,7 +590,13 @@
       v.muted=true; var p2=v.play(); if(p2&&p2.catch) p2.catch(function(){ finish(); });
     }); }
   }
-  startIntro();
+  // If we just arrived from the menu's own intro-video overlay (letters.html?skipIntro=1),
+  // the video already played there with sound on tap — don't play it again here.
+  if(new URLSearchParams(location.search).get('skipIntro')==='1'){
+    var introOv=document.getElementById('letterIntro');
+    if(introOv) introOv.classList.add('gone');
+    showLevel();
+  } else { startIntro(); }
 
   // safety: mobile browsers auto-suspend the AudioContext after idle time, which
   // silences the snap sound when a piece drops into the silhouette. Re-resume it

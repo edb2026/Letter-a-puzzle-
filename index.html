@@ -319,8 +319,11 @@
     </header>
 
     <div class="cards">
-      <!-- LETTERS PUZZLE — change data-href if your file has another name -->
-      <a class="card letters" data-href="letters.html">
+      <!-- LETTERS PUZZLE — tap PLAY: plays the intro video (with sound) here on the
+           menu page, then opens letters.html. This is required so mobile browsers
+           allow the sound to start together with the video, instead of needing a
+           second tap on the next page. -->
+      <a class="card letters" id="lettersCard">
         <img class="letters-pic" src="icons/abc-letters.jpg" alt="" aria-hidden="true">
         <h2>ABC LETTERS</h2>
         <p>Build words &amp; spell with letters</p>
@@ -397,6 +400,13 @@
     <button class="castle-skip-btn" id="castleSkipBtn" type="button">Skip ➜</button>
     <video id="castleIntroVideo" src="castle-intro.mp4" playsinline></video>
   </div>
+
+  <!-- Letters puzzle: fullscreen video overlay, shown after tapping the "ABC Letters" card -->
+  <div class="castle-video-overlay" id="lettersVideoOverlay">
+    <button class="castle-skip-btn" id="lettersSkipBtn" type="button">Skip ➜</button>
+    <video id="lettersIntroVideo" src="letters-intro.mp4" poster="letters-intro-poster.jpg" playsinline webkit-playsinline></video>
+  </div>
+
   <div class="castle-fade-black" id="castleFadeBlack"></div>
 
   <!-- Install help modal -->
@@ -512,6 +522,43 @@
 
     // Change this if your castle puzzle game file has a different name:
     var NEXT_PAGE = 'knight_puzzle_game_en.html';
+
+    function goToGame(){
+      fade.classList.add('show');
+      setTimeout(function(){ window.location.href = NEXT_PAGE; }, 480);
+    }
+    function startVideo(){
+      overlay.classList.add('show');
+      video.muted = false;
+      video.volume = 1.0;
+      video.currentTime = 0;
+      var p = video.play();
+      if(p && p.catch){
+        p.catch(function(){
+          // if sound-on autoplay is blocked, fall back to muted so it still plays
+          video.muted = true;
+          video.play();
+        });
+      }
+    }
+    card.addEventListener('click', startVideo);
+    video.addEventListener('ended', goToGame);
+    skipBtn.addEventListener('click', goToGame);
+  })();
+
+  // ---- Letters puzzle: tap card -> play intro video WITH sound -> open the puzzle game ----
+  // (same pattern as the castle flow above: playing the video here, inside the click
+  // handler, means the browser treats it as a direct response to the tap, so sound is
+  // allowed to start immediately — no second tap needed on the next page.)
+  (function(){
+    var card = document.getElementById('lettersCard');
+    var overlay = document.getElementById('lettersVideoOverlay');
+    var video = document.getElementById('lettersIntroVideo');
+    var skipBtn = document.getElementById('lettersSkipBtn');
+    var fade = document.getElementById('castleFadeBlack');
+    if(!card || !overlay || !video) return;
+
+    var NEXT_PAGE = 'letters.html?skipIntro=1';
 
     function goToGame(){
       fade.classList.add('show');
