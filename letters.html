@@ -108,6 +108,12 @@
   #letterIntro.gone{ display:none; }
   #letterIntroVid{ width:100%; height:100%; object-fit:cover; background:#000; }
 
+  /* ---- level-reveal video (plays after picking a level, before the puzzle opens) ---- */
+  #levelReveal{ position:fixed; inset:0; z-index:490; background:#000;
+                display:none; align-items:center; justify-content:center; }
+  #levelReveal.show{ display:flex; }
+  #levelRevealVid{ width:100%; height:100%; object-fit:cover; background:#000; }
+
   /* ---- level select screen ---- */
   #level{
     position:fixed; inset:0; z-index:480; display:none; flex-direction:column;
@@ -197,6 +203,10 @@
         <span class="lvl-dots"><i></i><i></i><i></i><i></i><i></i></span>
       </button>
     </div>
+  </div>
+
+  <div id="levelReveal">
+    <video id="levelRevealVid" src="letter-level-reveal.mp4" poster="letter-level-reveal-poster.jpg" playsinline webkit-playsinline preload="auto"></video>
   </div>
 
   <div id="hint">
@@ -541,9 +551,25 @@
     levelEl.classList.add('hide'); setTimeout(()=>{ levelEl.style.display='none'; },440);
     loadLetter("A");
   }
+  // Play the "letter reveal" video (with sound) right after a level is picked,
+  // then open the puzzle once the video finishes.
+  function playLevelReveal(cb){
+    const ov=document.getElementById('levelReveal'), v=document.getElementById('levelRevealVid');
+    if(!ov||!v){ cb(); return; }
+    let done=false;
+    function finish(){ if(done) return; done=true; try{ v.pause(); }catch(_){} ov.classList.remove('show'); cb(); }
+    v.removeEventListener('ended', finish); v.removeEventListener('error', finish);
+    ov.classList.add('show');
+    try{ v.currentTime=0; }catch(_){}
+    v.muted=false; v.volume=1;
+    v.addEventListener('ended', finish, {once:true});
+    v.addEventListener('error', finish, {once:true});
+    const p=v.play();
+    if(p&&p.catch) p.catch(()=>{ v.muted=true; const p2=v.play(); if(p2&&p2.catch) p2.catch(finish); });
+  }
   function pickLevel(n){ audio(); tick();
-    try{ if("speechSynthesis"in window){ const ss=window.speechSynthesis; ss.cancel(); say(ss, n===1?"Level one":"Level two", 0.58, 1.8); } }catch(_){}
-    setLevel(n); }
+    try{ if("speechSynthesis"in window) speechSynthesis.cancel(); }catch(_){}
+    playLevelReveal(()=>{ setLevel(n); }); }
   document.getElementById('lvl1').addEventListener('pointerdown', e=>{ e.preventDefault(); pickLevel(1); });
   document.getElementById('lvl2').addEventListener('pointerdown', e=>{ e.preventDefault(); pickLevel(2); });
   document.getElementById('levels').addEventListener('click', ()=>{ audio(); showLevel(); });
