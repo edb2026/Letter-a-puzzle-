@@ -484,7 +484,8 @@
   document.getElementById('replay').addEventListener('click',function(){ audio(); speakWin(); });
   document.getElementById('next').addEventListener('click',function(){ audio();
     if(this.dataset.action==='levels'){ winEl.classList.remove('show'); showLevel(); }
-    else { loadLetter(this.dataset.letter||"A"); } });
+    else { const nextLetter=this.dataset.letter||"A"; winEl.classList.remove('show');
+      playLevelReveal(()=>{ loadLetter(nextLetter); }); } });
 
   let rT; addEventListener('resize',()=>{clearTimeout(rT);rT=setTimeout(()=>{layout();pieces.forEach(p=>p.locked?setPos(p,boardLeft,boardTop):clampPiece(p));},120);});
   addEventListener('orientationchange',()=>setTimeout(()=>{layout();newGame();},200));
