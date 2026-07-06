@@ -557,8 +557,8 @@
   function playLevelReveal(cb, forLetter){
     const ov=document.getElementById('levelReveal'), v=document.getElementById('levelRevealVid');
     if(!ov||!v){ cb(); return; }
-    const src = forLetter==='B' ? 'letter-b-reveal.mp4' : forLetter==='C' ? 'letter-c-reveal.mp4' : forLetter==='D' ? 'letter-d-reveal.mp4' : 'letter-level-reveal.mp4';
-    const poster = forLetter==='B' ? 'letter-b-reveal-poster.jpg' : forLetter==='C' ? 'letter-c-reveal-poster.jpg' : forLetter==='D' ? 'letter-d-reveal-poster.jpg' : 'letter-level-reveal-poster.jpg';
+    const src = forLetter==='B' ? 'letter-b-reveal.mp4' : forLetter==='C' ? 'letter-c-reveal.mp4' : forLetter==='D' ? 'letter-d-reveal.mp4' : forLetter==='E' ? 'letter-e-reveal.mp4' : forLetter==='F' ? 'letter-f-reveal.mp4' : forLetter==='G' ? 'letter-g-reveal.mp4' : forLetter==='H' ? 'letter-h-reveal.mp4' : 'letter-level-reveal.mp4';
+    const poster = forLetter==='B' ? 'letter-b-reveal-poster.jpg' : forLetter==='C' ? 'letter-c-reveal-poster.jpg' : forLetter==='D' ? 'letter-d-reveal-poster.jpg' : forLetter==='E' ? 'letter-e-reveal-poster.jpg' : forLetter==='F' ? 'letter-f-reveal-poster.jpg' : forLetter==='G' ? 'letter-g-reveal-poster.jpg' : forLetter==='H' ? 'letter-h-reveal-poster.jpg' : 'letter-level-reveal-poster.jpg';
     if(v.getAttribute('src')!==src){ v.setAttribute('src', src); v.setAttribute('poster', poster); v.load(); }
     let done=false;
     function finish(){ if(done) return; done=true; try{ v.pause(); }catch(_){} ov.classList.remove('show'); cb(); }
